@@ -38,11 +38,7 @@ def _select_random_browser(impersonate: ImpersonateType) -> Optional[BrowserType
     If impersonate is a list, randomly select one browser from it.
     If it's a string or None, return as is.
     """
-    if isinstance(impersonate, list):
-        if not impersonate:
-            return None
-        return choice(impersonate)
-    return impersonate
+    pass
 
 
 class _ConfigurationLogic(ABC):
@@ -95,72 +91,11 @@ class _ConfigurationLogic(ABC):
     @staticmethod
     def _get_param(kwargs: Dict, key: str, default: Any) -> Any:
         """Get parameter from kwargs if present, otherwise return default."""
-        return kwargs[key] if key in kwargs else default
+        pass
 
     def _merge_request_args(self, **method_kwargs) -> Dict[str, Any]:
         """Merge request-specific arguments with default session arguments."""
-        url = method_kwargs.pop("url")
-
-        # Get parameters from kwargs or use defaults
-        impersonate = self._get_param(method_kwargs, "impersonate", self._default_impersonate)
-        impersonate = _select_random_browser(impersonate)
-        http3_enabled = self._get_param(method_kwargs, "http3", self._default_http3)
-        stealth = self._get_param(method_kwargs, "stealth", self._stealth)
-
-        final_args = {
-            "url": url,
-            # Curl automatically generates the suitable browser headers when you use `impersonate`
-            "headers": self._headers_job(
-                url,
-                self._get_param(method_kwargs, "headers", self._default_headers),
-                stealth,
-                bool(impersonate),
-            ),
-            "proxies": self._get_param(method_kwargs, "proxies", self._default_proxies),
-            "proxy": self._get_param(method_kwargs, "proxy", self._default_proxy),
-            "proxy_auth": self._get_param(method_kwargs, "proxy_auth", self._default_proxy_auth),
-            "timeout": self._get_param(method_kwargs, "timeout", self._default_timeout),
-            "allow_redirects": self._get_param(method_kwargs, "follow_redirects", self._default_follow_redirects),
-            "max_redirects": self._get_param(method_kwargs, "max_redirects", self._default_max_redirects),
-            "verify": self._get_param(method_kwargs, "verify", self._default_verify),
-            "cert": self._get_param(method_kwargs, "cert", self._default_cert),
-            "impersonate": impersonate,
-        }
-
-        # Add any remaining parameters that weren't explicitly handled above
-        # Skip the ones we already processed plus internal params
-        skip_keys = {
-            "impersonate",
-            "http3",
-            "stealth",
-            "headers",
-            "proxies",
-            "proxy",
-            "proxy_auth",
-            "timeout",
-            "follow_redirects",
-            "max_redirects",
-            "verify",
-            "cert",
-            "retries",
-            "retry_delay",
-            "selector_config",
-            # Browser session params (ignored by HTTP sessions)
-            "extra_headers",
-            "google_search",
-        }
-        for k, v in method_kwargs.items():
-            if k not in skip_keys and v is not None:
-                final_args[k] = v
-
-        if http3_enabled:  # pragma: no cover
-            final_args["http_version"] = CurlHttpVersion.V3ONLY
-            if impersonate:
-                log.warning(
-                    "The argument `http3` might cause errors if used with `impersonate` argument, try switching it off if you encounter any curl errors."
-                )
-
-        return final_args
+        pass
 
     def _headers_job(self, url, headers: Dict, stealth: bool, impersonate_enabled: bool) -> Dict:
         """
@@ -168,24 +103,7 @@ class _ConfigurationLogic(ABC):
         2. Generates real headers and append them to current headers
         3. Sets a Google referer header.
         """
-        # Merge session headers with request headers, request takes precedence (if it was set)
-        final_headers = {**self._default_headers, **(headers if headers else {})}
-        headers_keys = {k.lower() for k in final_headers}
-        if stealth:
-            if "referer" not in headers_keys:
-                final_headers["referer"] = "https://www.google.com/"
-
-            if not impersonate_enabled:  # Curl will generate the suitable headers
-                extra_headers = generate_headers(browser_mode=False)
-                final_headers.update(
-                    {k: v for k, v in extra_headers.items() if k.lower() not in headers_keys}
-                )  # Don't overwrite user-supplied headers
-
-        elif "user-agent" not in headers_keys and not impersonate_enabled:  # pragma: no cover
-            final_headers["User-Agent"] = __default_useragent__
-            log.debug(f"Can't find useragent in headers so '{final_headers['User-Agent']}' was used.")
-
-        return final_headers
+        pass
 
 
 class _SyncSessionLogic(_ConfigurationLogic):
@@ -222,55 +140,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         """
         Perform an HTTP request using the configured session.
         """
-        stealth = self._stealth if stealth is None else stealth
-
-        selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
-        max_retries = self._get_param(kwargs, "retries", self._default_retries)
-        retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
-        static_proxy = kwargs.pop("proxy", None)
-
-        session = self._curl_session
-        one_off_request = False
-        if session is _NO_SESSION and self.__enter__ is None:
-            # For usage inside FetcherClient
-            # It turns out `curl_cffi` caches impersonation state, so if you turned it off, then on then off, it won't be off on the last time.
-            session = CurlSession()
-            one_off_request = True
-
-        if not session:
-            raise RuntimeError("No active session available.")  # pragma: no cover
-
-        try:
-            for attempt in range(max_retries):
-                if self._proxy_rotator and static_proxy is None:
-                    proxy = self._proxy_rotator.get_proxy()
-                else:
-                    proxy = static_proxy
-
-                request_args = self._merge_request_args(stealth=stealth, proxy=proxy, **kwargs)
-                try:
-                    response = session.request(method, **request_args)
-                    result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": proxy})
-                    return result
-                except CurlError as e:  # pragma: no cover
-                    if attempt < max_retries - 1:
-                        # Now if the rotator is enabled, we will try again with the new proxy
-                        # If it's not enabled, then we will try again with the same proxy
-                        if is_proxy_error(e):
-                            log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."
-                            )
-                        else:
-                            log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
-                        time_sleep(retry_delay)
-                    else:
-                        log.error(f"Failed after {max_retries} attempts: {e}")
-                        raise  # Raise the exception if all retries fail
-        finally:
-            if session and one_off_request:
-                session.close()
-
-        raise RuntimeError("No active session available.")  # pragma: no cover
+        pass
 
     def get(self, url: str, **kwargs: Unpack[GetRequestParams]) -> Response:
         """
@@ -331,8 +201,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
     def put(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
@@ -363,8 +232,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
     def delete(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
@@ -395,10 +263,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        # Careful of sending a body in a DELETE request, it might cause some websites to reject the request as per https://www.rfc-editor.org/rfc/rfc7231#section-4.3.5,
-        # But some websites accept it, it depends on the implementation used.
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
 
 class _ASyncSessionLogic(_ConfigurationLogic):
@@ -435,59 +300,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         """
         Perform an HTTP request using the configured session.
         """
-        stealth = self._stealth if stealth is None else stealth
-
-        selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
-        max_retries = self._get_param(kwargs, "retries", self._default_retries)
-        retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
-        static_proxy = kwargs.pop("proxy", None)
-
-        session = self._async_curl_session
-        one_off_request = False
-        if session is _NO_SESSION and self.__aenter__ is None:
-            # For usage inside the ` AsyncFetcherClient ` class, and that's for several reasons
-            # 1. It turns out `curl_cffi` caches impersonation state, so if you turned it off, then on then off, it won't be off on the last time.
-            # 2. `curl_cffi` doesn't support making async requests without sessions
-            # 3. Using a single session for many requests at the same time in async doesn't sit well with curl_cffi.
-            session = AsyncCurlSession()
-            one_off_request = True
-
-        if not session:
-            raise RuntimeError("No active session available.")  # pragma: no cover
-
-        try:
-            # Determine if we should use proxy rotation
-            for attempt in range(max_retries):
-                if self._proxy_rotator and static_proxy is None:
-                    proxy = self._proxy_rotator.get_proxy()
-                else:
-                    proxy = static_proxy
-
-                request_args = self._merge_request_args(stealth=stealth, proxy=proxy, **kwargs)
-                try:
-                    response = await session.request(method, **request_args)
-                    result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": proxy})
-                    return result
-                except CurlError as e:  # pragma: no cover
-                    if attempt < max_retries - 1:
-                        # Now if the rotator is enabled, we will try again with the new proxy
-                        # If it's not enabled, then we will try again with the same proxy
-                        if is_proxy_error(e):
-                            log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."
-                            )
-                        else:
-                            log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
-
-                        await asyncio_sleep(retry_delay)
-                    else:
-                        log.error(f"Failed after {max_retries} attempts: {e}")
-                        raise  # Raise the exception if all retries fail
-        finally:
-            if session and one_off_request:
-                await session.close()
-
-        raise RuntimeError("No active session available.")  # pragma: no cover
+        pass
 
     def get(self, url: str, **kwargs: Unpack[GetRequestParams]) -> Awaitable[Response]:
         """
@@ -548,8 +361,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
     def put(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
@@ -580,8 +392,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
     def delete(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
@@ -612,10 +423,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        # Careful of sending a body in a DELETE request, it might cause some websites to reject the request as per https://www.rfc-editor.org/rfc/rfc7231#section-4.3.5,
-        # But some websites accept it, it depends on the implementation used.
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
 
 class FetcherSession:

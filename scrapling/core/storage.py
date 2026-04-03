@@ -22,21 +22,7 @@ class StorageSystemMixin(ABC):  # pragma: no cover
 
     @lru_cache(64, typed=True)
     def _get_base_url(self, default_value: str = "default") -> str:
-        if not self.url:
-            return default_value
-
-        try:
-            from tld import get_tld, Result
-
-            # Fixing the inaccurate return type hint in `get_tld`
-            extracted: Result | None = cast(
-                Result, get_tld(self.url, as_object=True, fail_silently=True, fix_protocol=True)
-            )
-            if not extracted:
-                return default_value
-            return extracted.fld or extracted.domain or default_value
-        except AttributeError:
-            return default_value
+        pass
 
     @abstractmethod
     def save(self, element: HtmlElement, identifier: str) -> None:
@@ -62,12 +48,7 @@ class StorageSystemMixin(ABC):  # pragma: no cover
     @lru_cache(128, typed=True)
     def _get_hash(identifier: str) -> str:
         """If you want to hash identifier in your storage system, use this safer"""
-        _identifier = identifier.lower().strip()
-        # Hash functions have to take bytes
-        _identifier_bytes = _identifier.encode("utf-8")
-
-        hash_value = sha256(_identifier_bytes).hexdigest()
-        return f"{hash_value}_{len(_identifier_bytes)}"  # Length to reduce collision chance
+        pass
 
 
 @lru_cache(1, typed=True)
@@ -95,16 +76,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         log.debug(f'Storage system loaded with arguments (storage_file="{storage_file}", url="{url}")')
 
     def _setup_database(self) -> None:
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS storage (
-                id INTEGER PRIMARY KEY,
-                url TEXT,
-                identifier TEXT,
-                element_data TEXT,
-                UNIQUE (url, identifier)
-            )
-        """)
-        self.connection.commit()
+        pass
 
     def save(self, element: HtmlElement, identifier: str) -> None:
         """Saves the elements unique properties to the storage for retrieval and relocation later
@@ -113,18 +85,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         :param identifier: This is the identifier that will be used to retrieve the element later from the storage. See
             the docs for more info.
         """
-        url = self._get_base_url()
-        element_data = _StorageTools.element_to_dict(element)
-        with self.lock:
-            self.cursor.execute(
-                """
-                INSERT OR REPLACE INTO storage (url, identifier, element_data)
-                VALUES (?, ?, ?)
-            """,
-                (url, identifier, dumps(element_data)),
-            )
-            self.cursor.fetchall()
-            self.connection.commit()
+        pass
 
     def retrieve(self, identifier: str) -> Optional[Dict[str, Any]]:
         """Using the identifier, we search the storage and return the unique properties of the element
@@ -133,23 +94,11 @@ class SQLiteStorageSystem(StorageSystemMixin):
             the docs for more info.
         :return: A dictionary of the unique properties
         """
-        url = self._get_base_url()
-        with self.lock:
-            self.cursor.execute(
-                "SELECT element_data FROM storage WHERE url = ? AND identifier = ?",
-                (url, identifier),
-            )
-            result = self.cursor.fetchone()
-            if result:
-                return loads(result[0])
-            return None
+        pass
 
     def close(self):
         """Close all connections. It will be useful when with some things like scrapy Spider.closed() function/signal"""
-        with self.lock:
-            self.connection.commit()
-            self.cursor.close()
-            self.connection.close()
+        pass
 
     def __del__(self):
         """To ensure all connections are closed when the object is destroyed."""

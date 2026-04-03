@@ -37,54 +37,19 @@ class CheckpointManager:
 
     async def has_checkpoint(self) -> bool:
         """Check if a checkpoint exists."""
-        return await self._checkpoint_path.exists()
+        pass
 
     async def save(self, data: CheckpointData) -> None:
         """Save checkpoint data to disk atomically."""
-        await self.crawldir.mkdir(parents=True, exist_ok=True)
-
-        temp_path = self._checkpoint_path.with_suffix(".tmp")
-
-        try:
-            serialized = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
-            async with await anyio.open_file(temp_path, "wb") as f:
-                await f.write(serialized)
-
-            await temp_path.rename(self._checkpoint_path)
-
-            log.info(f"Checkpoint saved: {len(data.requests)} requests, {len(data.seen)} seen URLs")
-        except Exception as e:
-            # Clean up temp file if it exists
-            if await temp_path.exists():
-                await temp_path.unlink()
-            log.error(f"Failed to save checkpoint: {e}")
-            raise
+        pass
 
     async def load(self) -> Optional[CheckpointData]:
         """Load checkpoint data from disk.
 
         Returns None if no checkpoint exists or if loading fails.
         """
-        if not await self.has_checkpoint():
-            return None
-
-        try:
-            async with await anyio.open_file(self._checkpoint_path, "rb") as f:
-                content = await f.read()
-                data: CheckpointData = pickle.loads(content)
-
-            log.info(f"Checkpoint loaded: {len(data.requests)} requests, {len(data.seen)} seen URLs")
-            return data
-
-        except Exception as e:
-            log.error(f"Failed to load checkpoint (starting fresh): {e}")
-            return None
+        pass
 
     async def cleanup(self) -> None:
         """Delete checkpoint file after successful completion."""
-        try:
-            if await self._checkpoint_path.exists():
-                await self._checkpoint_path.unlink()
-            log.debug("Checkpoint file cleaned up")
-        except Exception as e:
-            log.warning(f"Failed to cleanup checkpoint file: {e}")
+        pass

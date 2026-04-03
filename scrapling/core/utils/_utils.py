@@ -50,71 +50,37 @@ log = LoggerProxy()
 
 def set_logger(logger: logging.Logger) -> Token:
     """Set the current context logger. Returns token for reset."""
-    return _current_logger.set(logger)
+    pass
 
 
 def reset_logger(token: Token) -> None:
     """Reset logger to previous state using token."""
-    _current_logger.reset(token)
+    pass
 
 
 def flatten(lst: Iterable[Any]) -> List[Any]:
-    return list(chain.from_iterable(lst))
+    pass
 
 
 def _is_iterable(obj: Any) -> bool:
     # This will be used only in regex functions to make sure it's iterable but not string/bytes
-    return isinstance(
-        obj,
-        (
-            list,
-            tuple,
-        ),
-    )
+    pass
 
 
 class _StorageTools:
     @staticmethod
     def __clean_attributes(element: html.HtmlElement, forbidden: tuple = ()) -> Dict:
-        if not element.attrib:
-            return {}
-        return {k: v.strip() for k, v in element.attrib.items() if v and v.strip() and k not in forbidden}
+        pass
 
     @classmethod
     def element_to_dict(cls, element: html.HtmlElement) -> Dict:
-        parent = element.getparent()
-        result = {
-            "tag": str(element.tag),
-            "attributes": cls.__clean_attributes(element),
-            "text": element.text.strip() if element.text else None,
-            "path": cls._get_element_path(element),
-        }
-        if parent is not None:
-            result.update(
-                {
-                    "parent_name": parent.tag,
-                    "parent_attribs": dict(parent.attrib),
-                    "parent_text": parent.text.strip() if parent.text else None,
-                }
-            )
-
-            siblings = [child.tag for child in parent.iterchildren() if child != element]
-            if siblings:
-                result.update({"siblings": tuple(siblings)})
-
-        children = [child.tag for child in element.iterchildren() if not isinstance(child, html_forbidden)]
-        if children:
-            result.update({"children": tuple(children)})
-
-        return result
+        pass
 
     @classmethod
     def _get_element_path(cls, element: html.HtmlElement):
-        parent = element.getparent()
-        return tuple((element.tag,) if parent is None else (cls._get_element_path(parent) + (element.tag,)))
+        pass
 
 
 @lru_cache(128, typed=True)
 def clean_spaces(string):
-    string = string.translate(__CLEANING_TABLE__)
-    return __CONSECUTIVE_SPACES_REGEX__.sub(" ", string)
+    pass

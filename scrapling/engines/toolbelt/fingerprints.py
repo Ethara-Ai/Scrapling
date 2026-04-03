@@ -23,15 +23,7 @@ def get_os_name() -> OSName | Tuple:
 
     :return: Current OS name or `None` otherwise
     """
-    match __OS_NAME__:  # pragma: no cover
-        case "Linux":
-            return "linux"
-        case "Darwin":
-            return "macos"
-        case "Windows":
-            return "windows"
-        case _:
-            return SUPPORTED_OPERATING_SYSTEMS
+    pass
 
 
 def generate_headers(browser_mode: bool | str = False) -> Dict:
