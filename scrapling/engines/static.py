@@ -331,8 +331,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
     def put(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
@@ -363,8 +362,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
     def delete(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
@@ -395,10 +393,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        # Careful of sending a body in a DELETE request, it might cause some websites to reject the request as per https://www.rfc-editor.org/rfc/rfc7231#section-4.3.5,
-        # But some websites accept it, it depends on the implementation used.
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
 
 class _ASyncSessionLogic(_ConfigurationLogic):
@@ -548,8 +543,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
     def put(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
@@ -580,8 +574,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
     def delete(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
@@ -612,10 +605,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        # Careful of sending a body in a DELETE request, it might cause some websites to reject the request as per https://www.rfc-editor.org/rfc/rfc7231#section-4.3.5,
-        # But some websites accept it, it depends on the implementation used.
-        stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self._make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
+        pass
 
 
 class FetcherSession:

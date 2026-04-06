@@ -259,22 +259,12 @@ class Selector(SelectorsGeneration):
     @property
     def tag(self) -> str:
         """Get the tag name of the element"""
-        if self._is_text_node(self._root):
-            return "#text"
-        if not self.__tag:
-            self.__tag = str(self._root.tag)
-        return self.__tag or ""
+        pass
 
     @property
     def text(self) -> TextHandler:
         """Get text content of the element"""
-        if self._is_text_node(self._root):
-            return TextHandler(str(self._root))
-        if self.__text is None:
-            # If you want to escape lxml default behavior and remove comments like this `<span>CONDITION: <!-- -->Excellent</span>`
-            # before extracting text, then keep `keep_comments` set to False while initializing the first class
-            self.__text = TextHandler(self._root.text or "")
-        return self.__text
+        pass
 
     def get_all_text(
         self,
@@ -330,112 +320,69 @@ class Selector(SelectorsGeneration):
 
     def urljoin(self, relative_url: str) -> str:
         """Join this Selector's url with a relative url to form an absolute full URL."""
-        return urljoin(self.url, relative_url)
+        pass
 
     @property
     def attrib(self) -> AttributesHandler:
         """Get attributes of the element"""
-        if self._is_text_node(self._root):
-            return AttributesHandler({})
-        if not self.__attributes:
-            self.__attributes = AttributesHandler(self._root.attrib)
-        return self.__attributes
+        pass
 
     @property
     def html_content(self) -> TextHandler:
         """Return the inner HTML code of the element"""
-        if self._is_text_node(self._root):
-            return TextHandler(str(self._root))
-        content = tostring(self._root, encoding=self.encoding, method="html", with_tail=False)
-        if isinstance(content, bytes):
-            content = content.strip().decode(self.encoding)
-        return TextHandler(content)
+        pass
 
     @property
     def body(self) -> str | bytes:
         """Return the raw body of the current `Selector` without any processing. Useful for binary and non-HTML requests."""
-        if self._is_text_node(self._root):
-            return ""
-        return self._raw_body
+        pass
 
     def prettify(self) -> TextHandler:
         """Return a prettified version of the element's inner html-code"""
-        if self._is_text_node(self._root):
-            return TextHandler(str(self._root))
-        content = tostring(
-            self._root,
-            encoding=self.encoding,
-            pretty_print=True,
-            method="html",
-            with_tail=False,
-        )
-        if isinstance(content, bytes):
-            content = content.strip().decode(self.encoding)
-        return TextHandler(content)
+        pass
 
     def has_class(self, class_name: str) -> bool:
         """Check if the element has a specific class
         :param class_name: The class name to check for
         :return: True if element has class with that name otherwise False
         """
-        if self._is_text_node(self._root):
-            return False
-        return class_name in self._root.classes
+        pass
 
     @property
     def parent(self) -> Optional["Selector"]:
         """Return the direct parent of the element or ``None`` otherwise"""
-        _parent = self._root.getparent()
-        return self.__element_convertor(_parent) if _parent is not None else None
+        pass
 
     @property
     def below_elements(self) -> "Selectors":
         """Return all elements under the current element in the DOM tree"""
-        if self._is_text_node(self._root):
-            return Selectors()
-        below = cast(List, _find_all_elements(self._root))
-        return self.__elements_convertor(below) if below is not None else Selectors()
+        pass
 
     @property
     def children(self) -> "Selectors":
         """Return the children elements of the current element or empty list otherwise"""
-        if self._is_text_node(self._root):
-            return Selectors()
-        return Selectors(
-            self.__element_convertor(child)
-            for child in self._root.iterchildren()
-            if not isinstance(child, html_forbidden)
-        )
+        pass
 
     @property
     def siblings(self) -> "Selectors":
         """Return other children of the current element's parent or empty list otherwise"""
-        if self.parent:
-            return Selectors(child for child in self.parent.children if child._root != self._root)
-        return Selectors()
+        pass
 
     def iterancestors(self) -> Generator["Selector", None, None]:
         """Return a generator that loops over all ancestors of the element, starting with the element's parent."""
-        if self._is_text_node(self._root):
-            return
-        for ancestor in self._root.iterancestors():
-            yield self.__element_convertor(ancestor)
+        pass
 
     def find_ancestor(self, func: Callable[["Selector"], bool]) -> Optional["Selector"]:
         """Loop over all ancestors of the element till one match the passed function
         :param func: A function that takes each ancestor as an argument and returns True/False
         :return: The first ancestor that match the function or ``None`` otherwise.
         """
-        for ancestor in self.iterancestors():
-            if func(ancestor):
-                return ancestor
-        return None
+        pass
 
     @property
     def path(self) -> "Selectors":
         """Returns a list of type `Selectors` that contains the path leading to the current element from the root."""
-        lst = list(self.iterancestors())
-        return Selectors(lst)
+        pass
 
     @property
     def next(self) -> Optional["Selector"]:
@@ -452,14 +399,7 @@ class Selector(SelectorsGeneration):
     @property
     def previous(self) -> Optional["Selector"]:
         """Returns the previous element of the current element in the children of the parent or ``None`` otherwise."""
-        if self._is_text_node(self._root):
-            return None
-        prev_element = self._root.getprevious()
-        while prev_element is not None and isinstance(prev_element, html_forbidden):
-            # Ignore HTML comments and unwanted types
-            prev_element = prev_element.getprevious()
-
-        return self.__element_convertor(prev_element) if prev_element is not None else None
+        pass
 
     def get(self) -> TextHandler:
         """
@@ -472,7 +412,7 @@ class Selector(SelectorsGeneration):
 
     def getall(self) -> TextHandlers:
         """Return a single-element list containing this element's serialized string."""
-        return TextHandlers([self.get()])
+        pass
 
     extract = getall
     extract_first = get
@@ -702,88 +642,7 @@ class Selector(SelectorsGeneration):
         :param kwargs: The attributes you want to filter elements based on it.
         :return: The `Selectors` object of the elements or empty list
         """
-        if self._is_text_node(self._root):
-            return Selectors()
-
-        if not args and not kwargs:
-            raise TypeError("You have to pass something to search with, like tag name(s), tag attributes, or both.")
-
-        attributes: Dict[str, Any] = dict()
-        tags: Set[str] = set()
-        patterns: Set[Pattern] = set()
-        results, functions, selectors = Selectors(), [], []
-
-        # Brace yourself for a wonderful journey!
-        for arg in args:
-            if isinstance(arg, str):
-                tags.add(arg)
-
-            elif type(arg) in (list, tuple, set):
-                arg = cast(Iterable, arg)  # Type narrowing for type checkers like pyright
-                if not all(map(lambda x: isinstance(x, str), arg)):
-                    raise TypeError("Nested Iterables are not accepted, only iterables of tag names are accepted")
-                tags.update(set(arg))
-
-            elif isinstance(arg, dict):
-                if not all([(isinstance(k, str) and isinstance(v, str)) for k, v in arg.items()]):
-                    raise TypeError(
-                        "Nested dictionaries are not accepted, only string keys and string values are accepted"
-                    )
-                attributes.update(arg)
-
-            elif isinstance(arg, re_Pattern):
-                patterns.add(arg)
-
-            elif callable(arg):
-                if len(signature(arg).parameters) > 0:
-                    functions.append(arg)
-                else:
-                    raise TypeError(
-                        "Callable filter function must have at least one argument to take `Selector` objects."
-                    )
-
-            else:
-                raise TypeError(f'Argument with type "{type(arg)}" is not accepted, please read the docs.')
-
-        if not all([(isinstance(k, str) and isinstance(v, str)) for k, v in kwargs.items()]):
-            raise TypeError("Only string values are accepted for arguments")
-
-        for attribute_name, value in kwargs.items():
-            # Only replace names for kwargs, replacing them in dictionaries doesn't make sense
-            attribute_name = _whitelisted.get(attribute_name, attribute_name)
-            attributes[attribute_name] = value
-
-        # It's easier and faster to build a selector than traversing the tree
-        tags = tags or set("*")
-        for tag in tags:
-            selector = tag
-            for key, value in attributes.items():
-                value = value.replace('"', r"\"")  # Escape double quotes in user input
-                # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
-                selector += '[{}="{}"]'.format(key, value)
-            if selector != "*":
-                selectors.append(selector)
-
-        if selectors:
-            results = cast(Selectors, self.css(", ".join(selectors)))
-            if results:
-                # From the results, get the ones that fulfill passed regex patterns
-                for pattern in patterns:
-                    results = results.filter(lambda e: e.text.re(pattern, check_match=True))
-
-                # From the results, get the ones that fulfill passed functions
-                for function in functions:
-                    results = results.filter(function)
-        else:
-            results = results or self.below_elements
-            for pattern in patterns:
-                results = results.filter(lambda e: e.text.re(pattern, check_match=True))
-
-            # Collect an element if it fulfills the passed function otherwise
-            for function in functions:
-                results = results.filter(function)
-
-        return results
+        pass
 
     def find(
         self,
@@ -796,9 +655,7 @@ class Selector(SelectorsGeneration):
         :param kwargs: The attributes you want to filter elements based on it.
         :return: The `Selector` object of the element or `None` if the result didn't match
         """
-        for element in self.find_all(*args, **kwargs):
-            return element
-        return None
+        pass
 
     def __calculate_similarity_score(self, original: Dict, candidate: HtmlElement) -> float:
         """Used internally to calculate a score that shows how a candidate element similar to the original one
@@ -912,19 +769,7 @@ class Selector(SelectorsGeneration):
     # Operations on text functions
     def json(self) -> Dict:
         """Return JSON response if the response is jsonable otherwise throws error"""
-        if self._is_text_node(self._root):
-            return TextHandler(str(self._root)).json()
-        if self._raw_body and isinstance(self._raw_body, (str, bytes)):
-            if isinstance(self._raw_body, str):
-                return TextHandler(self._raw_body).json()
-            else:
-                if TYPE_CHECKING:
-                    assert isinstance(self._raw_body, bytes)
-                return TextHandler(self._raw_body.decode()).json()
-        elif self.text:
-            return self.text.json()
-        else:
-            return self.get_all_text(strip=True).json()
+        pass
 
     def re(
         self,
@@ -940,7 +785,7 @@ class Selector(SelectorsGeneration):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         :param case_sensitive: if disabled, the function will set the regex to ignore the letters case while compiling it
         """
-        return self.text.re(regex, replace_entities, clean_match, case_sensitive)
+        pass
 
     def re_first(
         self,
@@ -958,12 +803,12 @@ class Selector(SelectorsGeneration):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         :param case_sensitive: if disabled, the function will set the regex to ignore the letters case while compiling it
         """
-        return self.text.re_first(regex, default, replace_entities, clean_match, case_sensitive)
+        pass
 
     @staticmethod
     def __get_attributes(element: HtmlElement, ignore_attributes: List | Tuple) -> Dict:
         """Return attributes dictionary without the ignored list"""
-        return {k: v for k, v in element.attrib.items() if k not in ignore_attributes}
+        pass
 
     def __are_alike(
         self,
@@ -976,35 +821,7 @@ class Selector(SelectorsGeneration):
     ) -> bool:
         """Calculate a score of how much these elements are alike and return True
         if the score is higher or equals the threshold"""
-        candidate_attributes = (
-            self.__get_attributes(candidate, ignore_attributes) if ignore_attributes else candidate.attrib
-        )
-        score: float = 0
-        checks: int = 0
-
-        if original_attributes:
-            score += sum(
-                SequenceMatcher(None, v, candidate_attributes.get(k, "")).ratio()
-                for k, v in original_attributes.items()
-            )
-            checks += len(candidate_attributes)
-        else:
-            if not candidate_attributes:
-                # Both don't have attributes, this must mean something
-                score += 1
-                checks += 1
-
-        if match_text:
-            score += SequenceMatcher(
-                None,
-                clean_spaces(original.text or ""),
-                clean_spaces(candidate.text or ""),
-            ).ratio()
-            checks += 1
-
-        if checks:
-            return round(score / checks, 2) >= similarity_threshold
-        return False
+        pass
 
     def find_similar(
         self,
@@ -1035,37 +852,7 @@ class Selector(SelectorsGeneration):
 
         :return: A ``Selectors`` container of ``Selector`` objects or empty list
         """
-        if self._is_text_node(self._root):
-            return Selectors()
-
-        # We will use the elements' root from now on to get the speed boost of using Lxml directly
-        root = self._root
-        similar_elements = list()
-
-        current_depth = len(list(root.iterancestors()))
-        target_attrs = self.__get_attributes(root, ignore_attributes) if ignore_attributes else root.attrib
-
-        path_parts = [self.tag]
-        if (parent := root.getparent()) is not None:
-            path_parts.insert(0, parent.tag)
-            if (grandparent := parent.getparent()) is not None:
-                path_parts.insert(0, grandparent.tag)
-
-        xpath_path = "//{}".format("/".join(path_parts))
-        potential_matches = root.xpath(f"{xpath_path}[count(ancestor::*) = {current_depth}]")
-
-        for potential_match in potential_matches:
-            if potential_match != root and self.__are_alike(
-                root,
-                target_attrs,
-                potential_match,
-                ignore_attributes,
-                similarity_threshold,
-                match_text,
-            ):
-                similar_elements.append(potential_match)
-
-        return Selectors(map(self.__element_convertor, similar_elements))
+        pass
 
     @overload
     def find_by_text(
@@ -1102,38 +889,7 @@ class Selector(SelectorsGeneration):
         :param case_sensitive: if enabled, the letters case will be taken into consideration
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         """
-        if self._is_text_node(self._root):
-            return Selectors()
-
-        results = Selectors()
-        if not case_sensitive:
-            text = text.lower()
-
-        possible_targets = cast(List, _find_all_elements_with_spaces(self._root))
-        if possible_targets:
-            for node in self.__elements_convertor(possible_targets):
-                """Check if element matches given text otherwise, traverse the children tree and iterate"""
-                node_text: TextHandler = node.text
-                if clean_match:
-                    node_text = TextHandler(node_text.clean())
-
-                if not case_sensitive:
-                    node_text = TextHandler(node_text.lower())
-
-                if partial:
-                    if text in node_text:
-                        results.append(node)
-                elif text == node_text:
-                    results.append(node)
-
-                if first_match and results:
-                    # we got an element so we should stop
-                    break
-
-            if first_match:
-                if results:
-                    return results[0]
-        return results
+        pass
 
     @overload
     def find_by_regex(
@@ -1166,31 +922,7 @@ class Selector(SelectorsGeneration):
         :param case_sensitive: If enabled, the letters case will be taken into consideration in the regex.
         :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching.
         """
-        if self._is_text_node(self._root):
-            return Selectors()
-
-        results = Selectors()
-
-        possible_targets = cast(List, _find_all_elements_with_spaces(self._root))
-        if possible_targets:
-            for node in self.__elements_convertor(possible_targets):
-                """Check if element matches given regex otherwise, traverse the children tree and iterate"""
-                node_text = node.text
-                if node_text.re(
-                    query,
-                    check_match=True,
-                    clean_match=clean_match,
-                    case_sensitive=case_sensitive,
-                ):
-                    results.append(node)
-
-                if first_match and results:
-                    # we got an element so we should stop
-                    break
-
-            if results and first_match:
-                return results[0]
-        return results
+        pass
 
 
 class Selectors(List[Selector]):
@@ -1289,8 +1021,7 @@ class Selectors(List[Selector]):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         :param case_sensitive: if disabled, the function will set the regex to ignore the letters case while compiling it
         """
-        results = [n.re(regex, replace_entities, clean_match, case_sensitive) for n in self]
-        return TextHandlers(flatten(results))
+        pass
 
     def re_first(
         self,
@@ -1309,27 +1040,21 @@ class Selectors(List[Selector]):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         :param case_sensitive: if disabled, function will set the regex to ignore the letters case while compiling it
         """
-        for n in self:
-            for result in n.re(regex, replace_entities, clean_match, case_sensitive):
-                return result
-        return default
+        pass
 
     def search(self, func: Callable[["Selector"], bool]) -> Optional["Selector"]:
         """Loop over all current elements and return the first element that matches the passed function
         :param func: A function that takes each element as an argument and returns True/False
         :return: The first element that match the function or ``None`` otherwise.
         """
-        for element in self:
-            if func(element):
-                return element
-        return None
+        pass
 
     def filter(self, func: Callable[["Selector"], bool]) -> "Selectors":
         """Filter current elements based on the passed function
         :param func: A function that takes each element as an argument and returns True/False
         :return: The new `Selectors` object or empty list otherwise.
         """
-        return self.__class__([element for element in self if func(element)])
+        pass
 
     @overload
     def get(self) -> Optional[TextHandler]: ...
@@ -1347,7 +1072,7 @@ class Selectors(List[Selector]):
 
     def getall(self) -> TextHandlers:
         """Serialize all elements and return as a TextHandlers list."""
-        return TextHandlers([x.get() for x in self])
+        pass
 
     extract = getall
     extract_first = get
@@ -1355,17 +1080,17 @@ class Selectors(List[Selector]):
     @property
     def first(self) -> Optional[Selector]:
         """Returns the first Selector item of the current list or `None` if the list is empty"""
-        return self[0] if len(self) > 0 else None
+        pass
 
     @property
     def last(self) -> Optional[Selector]:
         """Returns the last Selector item of the current list or `None` if the list is empty"""
-        return self[-1] if len(self) > 0 else None
+        pass
 
     @property
     def length(self) -> int:
         """Returns the length of the current list"""
-        return len(self)
+        pass
 
     def __getstate__(self) -> Any:  # pragma: no cover
         # lxml don't like it :)

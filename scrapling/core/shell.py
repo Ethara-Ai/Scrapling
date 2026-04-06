@@ -89,10 +89,7 @@ class NoExitArgumentParser(ArgumentParser):  # pragma: no cover
         raise ValueError(f"Curl arguments parsing error: {message}")
 
     def exit(self, status=0, message=None):
-        if message:
-            log.error(f"Scrapling shell exited with status {status}: {message}")
-            self._print_message(message, stderr)
-        raise ValueError(f"Scrapling shell exited with status {status}: {message or 'Unknown reason'}")
+        pass
 
 
 class CurlParser:
@@ -148,186 +145,10 @@ class CurlParser:
     # --- Main Parsing Logic ---
     def parse(self, curl_command: str) -> Optional[Request]:
         """Parses the curl command string into a structured context for Fetcher."""
-
-        clean_command = curl_command.strip().lstrip("curl").strip().replace("\\\n", " ")
-
-        try:
-            tokens = shlex_split(clean_command)  # Split the string using shell-like syntax
-        except ValueError as e:  # pragma: no cover
-            log.error(f"Could not split command line: {e}")
-            return None
-
-        try:
-            parsed_args, unknown = self.parser.parse_known_args(tokens)
-            if unknown:
-                raise AttributeError(f"Unknown/Unsupported curl arguments: {unknown}")
-
-        except ValueError:  # pragma: no cover
-            return None
-
-        except AttributeError:
-            raise
-
-        except Exception as e:  # pragma: no cover
-            log.error(f"An unexpected error occurred during curl arguments parsing: {e}")
-            return None
-
-        # --- Determine Method ---
-        method = "get"  # Default
-        if parsed_args.get:  # `-G` forces GET
-            method = "get"
-
-        elif parsed_args.method:
-            method = parsed_args.method.strip().lower()
-
-        # Infer POST if data is present (unless overridden by -X or -G)
-        elif any(
-            [
-                parsed_args.data,
-                parsed_args.data_raw,
-                parsed_args.data_binary,
-                parsed_args.data_urlencode,
-            ]
-        ):
-            method = "post"
-
-        headers, cookies = _ParseHeaders(parsed_args.header)
-
-        if parsed_args.cookie:
-            # We are focusing on the string format from DevTools.
-            try:
-                for key, value in _CookieParser(parsed_args.cookie):
-                    # Update the cookie dict, potentially overwriting cookies with the same name from -H 'cookie:'
-                    cookies[key] = value
-                log.debug(f"Parsed cookies from -b argument: {list(cookies.keys())}")
-            except Exception as e:  # pragma: no cover
-                log.error(f"Could not parse cookie string from -b '{parsed_args.cookie}': {e}")
-
-        # --- Process Data Payload ---
-        params = dict()
-        data_payload: Optional[str | bytes | Dict] = None
-        json_payload: Optional[Any] = None
-
-        # DevTools often uses --data-raw for JSON bodies
-        # Precedence: --data-binary > --data-raw / -d > --data-urlencode
-        if parsed_args.data_binary is not None:  # pragma: no cover
-            try:
-                data_payload = parsed_args.data_binary.encode("utf-8")
-                log.debug("Using data from --data-binary as bytes.")
-            except Exception as e:
-                log.warning(
-                    f"Could not encode binary data '{parsed_args.data_binary}' as bytes: {e}. Using raw string."
-                )
-                data_payload = parsed_args.data_binary  # Fallback to string
-
-        elif parsed_args.data_raw is not None:
-            data_payload = parsed_args.data_raw.lstrip("$")
-
-        elif parsed_args.data is not None:
-            data_payload = parsed_args.data
-
-        elif parsed_args.data_urlencode:  # pragma: no cover
-            # Combine and parse urlencoded data
-            combined_data = "&".join(parsed_args.data_urlencode)
-            try:
-                data_payload = dict(parse_qsl(combined_data, keep_blank_values=True))
-            except Exception as e:
-                log.warning(f"Could not parse urlencoded data '{combined_data}': {e}. Treating as raw string.")
-                data_payload = combined_data
-
-        # Check if raw data looks like JSON, prefer 'json' param if so
-        if isinstance(data_payload, str):
-            try:
-                maybe_json = json_loads(data_payload)
-                if isinstance(maybe_json, (dict, list)):
-                    json_payload = maybe_json
-                    data_payload = None
-            except JSONDecodeError:
-                pass  # Not JSON, keep it in data_payload
-
-        # Handle `-G`: Move data to params if the method is GET
-        if method == "get" and data_payload:  # pragma: no cover
-            if isinstance(data_payload, dict):  # From --data-urlencode likely
-                params.update(data_payload)
-            elif isinstance(data_payload, str):
-                try:
-                    params.update(dict(parse_qsl(data_payload, keep_blank_values=True)))
-                except ValueError:
-                    log.warning(f"Could not parse data '{data_payload}' into GET parameters for -G.")
-
-            if params:
-                data_payload = None  # Clear data as it's moved to params
-                json_payload = None  # Should not have JSON body with -G
-
-        # --- Process Proxy ---
-        proxies: Optional[Dict[str, str]] = None
-        if parsed_args.proxy:
-            proxy_url = f"http://{parsed_args.proxy}" if "://" not in parsed_args.proxy else parsed_args.proxy
-
-            if parsed_args.proxy_user:
-                user_pass = parsed_args.proxy_user
-                parts = urlparse(proxy_url)
-                netloc_parts = parts.netloc.split("@")
-                netloc = f"{user_pass}@{netloc_parts[-1]}" if len(netloc_parts) > 1 else f"{user_pass}@{parts.netloc}"
-                proxy_url = urlunparse(
-                    (
-                        parts.scheme,
-                        netloc,
-                        parts.path,
-                        parts.params,
-                        parts.query,
-                        parts.fragment,
-                    )
-                )
-
-            # Standard proxy dict format
-            proxies = {"http": proxy_url, "https": proxy_url}
-            log.debug(f"Using proxy configuration: {proxies}")
-
-        # --- Final Context ---
-        return Request(
-            method=method,
-            url=parsed_args.url,
-            params=params,
-            data=data_payload,
-            json_data=json_payload,
-            headers=headers,
-            cookies=cookies,
-            proxy=proxies,
-            follow_redirects=True,  # Scrapling default is True
-        )
+        pass
 
     def convert2fetcher(self, curl_command: Request | str) -> Optional[Response]:
-        if isinstance(curl_command, (Request, str)):
-            request = self.parse(curl_command) if isinstance(curl_command, str) else curl_command
-
-            # Ensure request parsing was successful before proceeding
-            if request is None:  # pragma: no cover
-                log.error("Failed to parse curl command, cannot convert to fetcher.")
-                return None
-
-            request_args = request._asdict()
-            method = request_args.pop("method").strip().lower()
-            if method in self._supported_methods:
-                request_args["json"] = request_args.pop("json_data")
-
-                # Ensure data/json are removed for non-POST/PUT methods
-                if method not in ("post", "put"):
-                    _ = request_args.pop("data", None)
-                    _ = request_args.pop("json", None)
-
-                try:
-                    return getattr(self.__fetcher, method)(**request_args)
-                except Exception as e:  # pragma: no cover
-                    log.error(f"Error calling Fetcher.{method}: {e}")
-                    return None
-            else:  # pragma: no cover
-                log.error(f'Request method "{method}" isn\'t supported by Scrapling yet')
-                return None
-
-        else:  # pragma: no cover
-            log.error("Input must be a valid curl command string or a Request object.")
-            return None
+        pass
 
 
 def _unpack_signature(func, signature_name=None):
@@ -336,49 +157,11 @@ def _unpack_signature(func, signature_name=None):
 
     This allows the interactive shell to show individual parameters instead of just **kwargs, similar to how IDEs display them.
     """
-    try:
-        sig = signature(func)
-        func_name = signature_name or getattr(func, "__name__", None)
-
-        # Check if this function has known parameters
-        if func_name not in Signatures_map:
-            return sig
-
-        new_params = []
-        for param in sig.parameters.values():
-            if param.kind == Parameter.VAR_KEYWORD:
-                # Replace **kwargs with individual keyword-only parameters
-                for field_name, field_type in Signatures_map[func_name].items():
-                    new_params.append(
-                        Parameter(field_name, Parameter.KEYWORD_ONLY, default=Parameter.empty, annotation=field_type)
-                    )
-            else:
-                new_params.append(param)
-
-        # Reconstruct signature with unpacked parameters
-        if len(new_params) != len(sig.parameters):
-            return sig.replace(parameters=new_params)
-        return sig
-
-    except Exception:  # pragma: no cover
-        return signature(func)
+    pass
 
 
 def show_page_in_browser(page: Selector):  # pragma: no cover
-    if not page or not isinstance(page, Selector):
-        log.error("Input must be of type `Selector`")
-        return
-
-    try:
-        fd, fname = make_temp_file(prefix="scrapling_view_", suffix=".html")
-        with open(fd, "w", encoding=page.encoding) as f:
-            f.write(page.html_content)
-
-        open_in_browser(f"file://{fname}")
-    except IOError as e:
-        log.error(f"Failed to write temporary file for viewing: {e}")
-    except Exception as e:
-        log.error(f"An unexpected error occurred while viewing the page: {e}")
+    pass
 
 
 class CustomShell:
@@ -427,147 +210,34 @@ class CustomShell:
 
     def init_components(self):
         """Initialize application components"""
-        # This is where you'd set up your application-specific objects
-        if self.log_level:
-            getLogger("scrapling").setLevel(self.log_level)
-
-        settings = self.__Fetcher.display_config()
-        settings.pop("storage", None)
-        settings.pop("storage_args", None)
-        log.info(f"Scrapling {__version__} shell started")
-        log.info(f"Logging level is set to '{getLevelName(self.log_level)}'")
-        log.info(f"Fetchers' parsing settings: {settings}")
+        pass
 
     @staticmethod
     def banner():
         """Create a custom banner for the shell"""
-        return f"""
--> Available Scrapling objects:
-   - Fetcher/AsyncFetcher/FetcherSession
-   - DynamicFetcher/DynamicSession/AsyncDynamicSession
-   - StealthyFetcher/StealthySession/AsyncStealthySession
-   - Selector
-
--> Useful shortcuts:
-   - {"get":<30} Shortcut for `Fetcher.get`
-   - {"post":<30} Shortcut for `Fetcher.post`
-   - {"put":<30} Shortcut for `Fetcher.put`
-   - {"delete":<30} Shortcut for `Fetcher.delete`
-   - {"fetch":<30} Shortcut for `DynamicFetcher.fetch`
-   - {"stealthy_fetch":<30} Shortcut for `StealthyFetcher.fetch`
-
--> Useful commands
-   - {"page / response":<30} The response object of the last page you fetched
-   - {"pages":<30} Selectors object of the last 5 response objects you fetched
-   - {"uncurl('curl_command')":<30} Convert curl command to a Request object. (Optimized to handle curl commands copied from DevTools network tab.)
-   - {"curl2fetcher('curl_command')":<30} Convert curl command and make the request with Fetcher. (Optimized to handle curl commands copied from DevTools network tab.)
-   - {"view(page)":<30} View page in a browser
-   - {"help()":<30} Show this help message (Shell help)
-
-Type 'exit' or press Ctrl+D to exit.
-        """
+        pass
 
     def update_page(self, result):  # pragma: no cover
         """Update the current page and add to pages history"""
-        self.page = result
-        if isinstance(result, (Response, Selector)):
-            self.pages.append(result)
-            if len(self.pages) > 5:
-                self.pages.pop(0)  # Remove the oldest item
-
-            # Update in IPython namespace too
-            if self.shell:
-                self.shell.user_ns["page"] = self.page
-                self.shell.user_ns["response"] = self.page
-                self.shell.user_ns["pages"] = self.pages
-
-        return result
+        pass
 
     def create_wrapper(
         self, func: Callable, get_signature: bool = True, signature_name: Optional[str] = None
     ) -> Callable:
         """Create a wrapper that preserves function signature but updates page"""
-
-        @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            result = func(*args, **kwargs)
-            return self.update_page(result)
-
-        if get_signature:
-            # Explicitly preserve and unpack signature for IPython introspection and autocompletion
-            setattr(wrapper, "__signature__", _unpack_signature(func, signature_name))
-        else:
-            setattr(wrapper, "__signature__", signature(func))
-
-        return wrapper
+        pass
 
     def get_namespace(self):
         """Create a namespace with application-specific objects"""
-
-        # Create wrapped versions of fetch functions
-        get = self.create_wrapper(self.__Fetcher.get)
-        post = self.create_wrapper(self.__Fetcher.post)
-        put = self.create_wrapper(self.__Fetcher.put)
-        delete = self.create_wrapper(self.__Fetcher.delete)
-        dynamic_fetch = self.create_wrapper(self.__DynamicFetcher.fetch)
-        stealthy_fetch = self.create_wrapper(self.__StealthyFetcher.fetch, signature_name="stealthy_fetch")
-        curl2fetcher = self.create_wrapper(self._curl_parser.convert2fetcher, get_signature=False)
-
-        # Create the namespace dictionary
-        return {
-            "get": get,
-            "post": post,
-            "put": put,
-            "delete": delete,
-            "Fetcher": self.__Fetcher,
-            "AsyncFetcher": self.__AsyncFetcher,
-            "FetcherSession": self.__FetcherSession,
-            "DynamicSession": self.__DynamicSession,
-            "AsyncDynamicSession": self.__AsyncDynamicSession,
-            "StealthySession": self.__StealthySession,
-            "AsyncStealthySession": self.__AsyncStealthySession,
-            "fetch": dynamic_fetch,
-            "DynamicFetcher": self.__DynamicFetcher,
-            "stealthy_fetch": stealthy_fetch,
-            "StealthyFetcher": self.__StealthyFetcher,
-            "Selector": Selector,
-            "page": self.page,
-            "response": self.page,
-            "pages": self.pages,
-            "view": show_page_in_browser,
-            "uncurl": self._curl_parser.parse,
-            "curl2fetcher": curl2fetcher,
-            "help": self.show_help,
-        }
+        pass
 
     def show_help(self):  # pragma: no cover
         """Show help information"""
-        print(self.banner())
+        pass
 
     def start(self):  # pragma: no cover
         """Start the interactive shell"""
-
-        # Get our namespace with application objects
-        namespace = self.get_namespace()
-        ipython_shell = self.__InteractiveShellEmbed(
-            banner1=self.banner(),
-            banner2="",
-            enable_tip=False,
-            exit_msg="Bye Bye",
-            user_ns=namespace,
-        )
-        self.shell = ipython_shell
-
-        # If a command was provided, execute it and exit
-        if self.code:
-            log.info(f"Executing provided code: {self.code}")
-            try:
-                ipython_shell.run_cell(self.code, store_history=False)
-            except Exception as e:
-                log.error(f"Error executing initial code: {e}")
-            return
-
-        ipython_shell()
+        pass
 
 
 class Convertor:

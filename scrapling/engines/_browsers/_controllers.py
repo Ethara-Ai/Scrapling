@@ -70,33 +70,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
 
     def start(self):
         """Create a browser for this instance and context."""
-        if not self.playwright:
-            self.playwright = sync_playwright().start()
-
-            try:
-                if self._config.cdp_url:  # pragma: no cover
-                    self.browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                    if not self._config.proxy_rotator and self.browser:
-                        self.context = self.browser.new_context(**self._context_options)
-                elif self._config.proxy_rotator:
-                    self.browser = self.playwright.chromium.launch(**self._browser_options)
-                else:
-                    persistent_options = (
-                        self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
-                    )
-                    self.context = self.playwright.chromium.launch_persistent_context(**persistent_options)
-
-                if self.context:
-                    self.context = self._initialize_context(self._config, self.context)
-
-                self._is_alive = True
-            except Exception:
-                # Clean up playwright if browser setup fails
-                self.playwright.stop()
-                self.playwright = None
-                raise
-        else:
-            raise RuntimeError("Session has been already started")
+        pass
 
     def fetch(self, url: str, **kwargs: Unpack[PlaywrightFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -118,90 +92,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
         :return: A `Response` object.
         """
-        static_proxy = kwargs.pop("proxy", None)
-
-        params = _validate(kwargs, self, PlaywrightConfig)
-        if not self._is_alive:  # pragma: no cover
-            raise RuntimeError("Context manager has been closed")
-
-        request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
-        referer = (
-            "https://www.google.com/" if (params.google_search and "referer" not in request_headers_keys) else None
-        )
-
-        for attempt in range(self._config.retries):
-            proxy: Optional[ProxyType] = None
-            if self._config.proxy_rotator and static_proxy is None:
-                proxy = self._config.proxy_rotator.get_proxy()
-            else:
-                proxy = static_proxy
-
-            with self._page_generator(
-                params.timeout, params.extra_headers, params.disable_resources, proxy, params.blocked_domains
-            ) as page_info:
-                final_response: List = [None]
-                xhr_captured: List = []
-                page = page_info.page
-                page.on(
-                    "response",
-                    self._create_response_handler(
-                        page_info,
-                        final_response,
-                        xhr_pattern=self._config.capture_xhr,
-                        xhr_container=xhr_captured,
-                    ),
-                )
-
-                try:
-                    first_response = page.goto(url, referer=referer)
-                    self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-
-                    if not first_response:
-                        raise RuntimeError(f"Failed to get response for {url}")
-
-                    if params.page_action:
-                        try:
-                            _ = params.page_action(page)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing page_action: {e}")
-
-                    if params.wait_selector:
-                        try:
-                            waiter: Locator = page.locator(params.wait_selector)
-                            waiter.first.wait_for(state=params.wait_selector_state)
-                            self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
-
-                    page.wait_for_timeout(params.wait)
-
-                    response = ResponseFactory.from_playwright_response(
-                        page,
-                        first_response,
-                        final_response[0],
-                        params.selector_config,
-                        meta={"proxy": proxy},
-                        xhr_captured=xhr_captured,
-                    )
-                    return response
-
-                except Exception as e:
-                    page_info.mark_error()
-                    if attempt < self._config.retries - 1:
-                        if is_proxy_error(e):
-                            log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
-                            )
-                        else:
-                            log.warning(
-                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
-                            )
-                        time_sleep(self._config.retry_delay)
-                    else:
-                        log.error(f"Failed after {self._config.retries} attempts: {e}")
-                        raise
-
-        raise RuntimeError("Request failed")  # pragma: no cover
+        pass
 
 
 class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
@@ -251,32 +142,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
 
     async def start(self) -> None:
         """Create a browser for this instance and context."""
-        if not self.playwright:
-            self.playwright = await async_playwright().start()
-            try:
-                if self._config.cdp_url:
-                    self.browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                    if not self._config.proxy_rotator and self.browser:
-                        self.context = await self.browser.new_context(**self._context_options)
-                elif self._config.proxy_rotator:
-                    self.browser = await self.playwright.chromium.launch(**self._browser_options)
-                else:
-                    persistent_options = (
-                        self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
-                    )
-                    self.context = await self.playwright.chromium.launch_persistent_context(**persistent_options)
-
-                if self.context:
-                    self.context = await self._initialize_context(self._config, self.context)
-
-                self._is_alive = True
-            except Exception:
-                # Clean up playwright if browser setup fails
-                await self.playwright.stop()
-                self.playwright = None
-                raise
-        else:
-            raise RuntimeError("Session has been already started")
+        pass
 
     async def fetch(self, url: str, **kwargs: Unpack[PlaywrightFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -298,88 +164,4 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
         :return: A `Response` object.
         """
-        static_proxy = kwargs.pop("proxy", None)
-
-        params = _validate(kwargs, self, PlaywrightConfig)
-
-        if not self._is_alive:  # pragma: no cover
-            raise RuntimeError("Context manager has been closed")
-
-        request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
-        referer = (
-            "https://www.google.com/" if (params.google_search and "referer" not in request_headers_keys) else None
-        )
-
-        for attempt in range(self._config.retries):
-            proxy: Optional[ProxyType] = None
-            if self._config.proxy_rotator and static_proxy is None:
-                proxy = self._config.proxy_rotator.get_proxy()
-            else:
-                proxy = static_proxy
-
-            async with self._page_generator(
-                params.timeout, params.extra_headers, params.disable_resources, proxy, params.blocked_domains
-            ) as page_info:
-                final_response: List = [None]
-                xhr_captured: List = []
-                page = page_info.page
-                page.on(
-                    "response",
-                    self._create_response_handler(
-                        page_info,
-                        final_response,
-                        xhr_pattern=self._config.capture_xhr,
-                        xhr_container=xhr_captured,
-                    ),
-                )
-
-                try:
-                    first_response = await page.goto(url, referer=referer)
-                    await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-
-                    if not first_response:
-                        raise RuntimeError(f"Failed to get response for {url}")
-
-                    if params.page_action:
-                        try:
-                            _ = await params.page_action(page)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing page_action: {e}")
-
-                    if params.wait_selector:
-                        try:
-                            waiter: AsyncLocator = page.locator(params.wait_selector)
-                            await waiter.first.wait_for(state=params.wait_selector_state)
-                            await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
-
-                    await page.wait_for_timeout(params.wait)
-
-                    response = await ResponseFactory.from_async_playwright_response(
-                        page,
-                        first_response,
-                        final_response[0],
-                        params.selector_config,
-                        meta={"proxy": proxy},
-                        xhr_captured=xhr_captured,
-                    )
-                    return response
-
-                except Exception as e:
-                    page_info.mark_error()
-                    if attempt < self._config.retries - 1:
-                        if is_proxy_error(e):
-                            log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
-                            )
-                        else:
-                            log.warning(
-                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
-                            )
-                        await asyncio_sleep(self._config.retry_delay)
-                    else:
-                        log.error(f"Failed after {self._config.retries} attempts: {e}")
-                        raise
-
-        raise RuntimeError("Request failed")  # pragma: no cover
+        pass

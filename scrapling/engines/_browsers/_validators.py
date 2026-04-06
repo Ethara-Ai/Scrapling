@@ -28,26 +28,13 @@ from scrapling.engines._browsers._types import PlaywrightFetchParams, StealthFet
 @lru_cache(8)
 def _is_invalid_file_path(value: str) -> bool | str:  # pragma: no cover
     """Fast file path validation"""
-    path = Path(value)
-    if not path.exists():
-        return f"Init script path not found: {value}"
-    if not path.is_file():
-        return f"Init script is not a file: {value}"
-    if not path.is_absolute():
-        return f"Init script is not a absolute path: {value}"
-    return False
+    pass
 
 
 @lru_cache(2)
 def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
     """Fast CDP URL validation"""
-    if not cdp_url.startswith(("ws://", "wss://")):
-        return "CDP URL must use 'ws://' or 'wss://' scheme"
-
-    netloc = urlparse(cdp_url).netloc
-    if not netloc:  # pragma: no cover
-        return "Invalid hostname for the CDP URL"
-    return False
+    pass
 
 
 # Type aliases for cleaner annotations
@@ -166,39 +153,7 @@ def validate_fetch(
     session: Any,
     model: type[PlaywrightConfig] | type[StealthConfig],
 ) -> _fetch_params:  # pragma: no cover
-    result: Dict[str, Any] = {}
-    overrides: Dict[str, Any] = {}
-    kwargs_dict: Dict[str, Any] = dict(method_kwargs)
-
-    # Get all field names that _fetch_params needs
-    fetch_param_fields = {f.name for f in fields(_fetch_params)}
-
-    for key in fetch_param_fields:
-        if key in kwargs_dict:
-            overrides[key] = kwargs_dict[key]
-        elif hasattr(session, "_config") and hasattr(session._config, key):
-            result[key] = getattr(session._config, key)
-
-    if overrides:
-        validated_config = validate(overrides, model)
-        # Extract ONLY the fields that were actually overridden (not all fields)
-        # This prevents validated defaults from overwriting session config values
-        validated_dict = {
-            field: getattr(validated_config, field) for field in overrides.keys() if hasattr(validated_config, field)
-        }
-
-        # Preserve solve_cloudflare if the user explicitly provided it, even if the model doesn't have it
-        if "solve_cloudflare" in overrides:
-            validated_dict["solve_cloudflare"] = overrides["solve_cloudflare"]
-
-        # Start with session defaults, then overwrite with validated overrides
-        result.update(validated_dict)
-
-    # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
-    result.setdefault("solve_cloudflare", False)
-    result.setdefault("blocked_domains", None)
-
-    return _fetch_params(**result)
+    pass
 
 
 # Cache default values for each model to reduce validation overhead
@@ -217,8 +172,7 @@ for _model in (StealthConfig, PlaywrightConfig):
 
 def _filter_defaults(params: Dict, model: str) -> Dict:
     """Filter out parameters that match their default values to reduce validation overhead."""
-    defaults = models_default_values[model]
-    return {k: v for k, v in params.items() if k not in defaults or v != defaults[k]}
+    pass
 
 
 @overload
@@ -230,9 +184,4 @@ def validate(params: Dict, model: type[PlaywrightConfig]) -> PlaywrightConfig: .
 
 
 def validate(params: Dict, model: type[PlaywrightConfig] | type[StealthConfig]) -> PlaywrightConfig | StealthConfig:
-    try:
-        # Filter out params with the default values (no need to validate them) to speed up validation
-        filtered = _filter_defaults(params, model.__name__)
-        return convert(filtered, model)
-    except ValidationError as e:
-        raise TypeError(f"Invalid argument type: {e}") from e
+    pass

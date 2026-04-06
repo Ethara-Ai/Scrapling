@@ -48,16 +48,7 @@ class StealthyFetcher(BaseFetcher):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         :return: A `Response` object.
         """
-        selector_config = kwargs.get("selector_config", {}) or kwargs.get(
-            "custom_config", {}
-        )  # Checking `custom_config` for backward compatibility
-        if not isinstance(selector_config, dict):
-            raise TypeError("Argument `selector_config` must be a dictionary.")
-
-        kwargs["selector_config"] = {**cls._generate_parser_arguments(), **selector_config}
-
-        with StealthySession(**kwargs) as engine:
-            return engine.fetch(url)
+        pass
 
     @classmethod
     async def async_fetch(cls, url: str, **kwargs: Unpack[StealthSession]) -> Response:
@@ -97,13 +88,4 @@ class StealthyFetcher(BaseFetcher):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         :return: A `Response` object.
         """
-        selector_config = kwargs.get("selector_config", {}) or kwargs.get(
-            "custom_config", {}
-        )  # Checking `custom_config` for backward compatibility
-        if not isinstance(selector_config, dict):
-            raise TypeError("Argument `selector_config` must be a dictionary.")
-
-        kwargs["selector_config"] = {**cls._generate_parser_arguments(), **selector_config}
-
-        async with AsyncStealthySession(**kwargs) as engine:
-            return await engine.fetch(url)
+        pass

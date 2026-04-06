@@ -14,12 +14,7 @@ if TYPE_CHECKING:
 
 
 def _convert_to_bytes(value: str | bytes) -> bytes:
-    if isinstance(value, bytes):
-        return value
-    if not isinstance(value, str):
-        raise TypeError(f"Can't convert {type(value).__name__} to bytes")
-
-    return value.encode(encoding="utf-8", errors="ignore")
+    pass
 
 
 class Request:
@@ -46,20 +41,11 @@ class Request:
 
     def copy(self) -> "Request":
         """Create a copy of this request."""
-        return Request(
-            url=self.url,
-            sid=self.sid,
-            callback=self.callback,
-            priority=self.priority,
-            dont_filter=self.dont_filter,
-            meta=self.meta.copy(),
-            _retry_count=self._retry_count,
-            **self._session_kwargs,
-        )
+        pass
 
     @cached_property
     def domain(self) -> str:
-        return urlparse(self.url).netloc
+        pass
 
     def update_fingerprint(
         self,
@@ -71,46 +57,7 @@ class Request:
 
         Caches the result in self._fp after first computation.
         """
-        if self._fp is not None:
-            return self._fp
-
-        post_data = self._session_kwargs.get("data", {})
-        body = b""
-        if post_data:
-            if isinstance(post_data, dict | list | tuple):
-                body = urlencode(post_data).encode()
-            elif isinstance(post_data, str):
-                body = post_data.encode()
-            elif isinstance(post_data, BytesIO):
-                body = post_data.getvalue()
-            elif isinstance(post_data, bytes):
-                body = post_data
-        else:
-            post_data = self._session_kwargs.get("json", {})
-            body = orjson.dumps(post_data) if post_data else b""
-
-        data: Dict[str, str | Tuple] = {
-            "sid": self.sid,
-            "body": body.hex(),
-            "method": self._session_kwargs.get("method", "GET"),
-            "url": canonicalize_url(self.url, keep_fragments=keep_fragments),
-        }
-
-        if include_kwargs:
-            kwargs = (key.lower() for key in self._session_kwargs.keys() if key.lower() not in ("data", "json"))
-            data["kwargs"] = "".join(set(_convert_to_bytes(key).hex() for key in kwargs))
-
-        if include_headers:
-            headers = self._session_kwargs.get("headers") or self._session_kwargs.get("extra_headers") or {}
-            processed_headers = {}
-            # Some header normalization
-            for key, value in headers.items():
-                processed_headers[_convert_to_bytes(key.lower()).hex()] = _convert_to_bytes(value.lower()).hex()
-            data["headers"] = tuple(processed_headers.items())
-
-        fp = hashlib.sha1(orjson.dumps(data, option=orjson.OPT_SORT_KEYS), usedforsecurity=False).digest()
-        self._fp = fp
-        return fp
+        pass
 
     def __repr__(self) -> str:
         callback_name = getattr(self.callback, "__name__", None) or "None"
@@ -156,8 +103,4 @@ class Request:
 
         :param spider: Spider instance to look up callback method on
         """
-        if hasattr(self, "_callback_name") and self._callback_name:
-            self.callback = getattr(spider, self._callback_name, None) or spider.parse
-            del self._callback_name
-        elif hasattr(self, "_callback_name"):
-            del self._callback_name
+        pass

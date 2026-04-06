@@ -21,12 +21,11 @@ class PageInfo(Generic[PageType]):
 
     def mark_busy(self, url: str = ""):
         """Mark the page as busy"""
-        self.state = "busy"
-        self.url = url
+        pass
 
     def mark_error(self):
         """Mark the page as having an error"""
-        self.state = "error"
+        pass
 
     def __repr__(self):
         return f'Page(URL="{self.url!r}", state={self.state!r})'
@@ -56,32 +55,18 @@ class PagePool:
 
     def add_page(self, page: SyncPage | AsyncPage) -> PageInfo[SyncPage] | PageInfo[AsyncPage]:
         """Add a new page to the pool"""
-        with self._lock:
-            if len(self.pages) >= self.max_pages:
-                raise RuntimeError(f"Maximum page limit ({self.max_pages}) reached")
-
-            if isinstance(page, AsyncPage):
-                page_info: PageInfo[SyncPage] | PageInfo[AsyncPage] = cast(
-                    PageInfo[AsyncPage], PageInfo(page, "ready", "")
-                )
-            else:
-                page_info = cast(PageInfo[SyncPage], PageInfo(page, "ready", ""))
-
-            self.pages.append(page_info)
-            return page_info
+        pass
 
     @property
     def pages_count(self) -> int:
         """Get the total number of pages"""
-        return len(self.pages)
+        pass
 
     @property
     def busy_count(self) -> int:
         """Get the number of busy pages"""
-        with self._lock:
-            return sum(1 for p in self.pages if p.state == "busy")
+        pass
 
     def cleanup_error_pages(self):
         """Remove pages in error state"""
-        with self._lock:
-            self.pages = [p for p in self.pages if p.state != "error"]
+        pass

@@ -82,9 +82,4 @@ class CheckpointManager:
 
     async def cleanup(self) -> None:
         """Delete checkpoint file after successful completion."""
-        try:
-            if await self._checkpoint_path.exists():
-                await self._checkpoint_path.unlink()
-            log.debug("Checkpoint file cleaned up")
-        except Exception as e:
-            log.warning(f"Failed to cleanup checkpoint file: {e}")
+        pass

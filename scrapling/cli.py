@@ -21,8 +21,7 @@ __PACKAGE_DIR__ = Path(__file__).parent
 
 
 def __Execute(cmd: List[str], help_line: str) -> None:  # pragma: no cover
-    print(f"Installing {help_line}...")
-    _ = check_output(cmd, shell=False)  # nosec B603
+    pass
     # I meant to not use try except here
 
 
@@ -114,28 +113,7 @@ def __BuildRequest(headers: List[str], cookies: str, params: str, json: Optional
     help="Force Scrapling to reinstall all Fetchers dependencies",
 )
 def install(force):  # pragma: no cover
-    if force or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists():
-        __Execute(
-            [python_executable, "-m", "playwright", "install", "chromium"],
-            "Playwright browsers",
-        )
-        __Execute(
-            [
-                python_executable,
-                "-m",
-                "playwright",
-                "install-deps",
-                "chromium",
-            ],
-            "Playwright dependencies",
-        )
-        from tld.utils import update_tld_names
-
-        update_tld_names(fail_silently=True)
-        # if no errors raised by the above commands, then we add the below file
-        __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").touch()
-    else:
-        print("The dependencies are already installed")
+    pass
 
 
 @command(help="Run Scrapling's MCP server (Check the docs for more info).")
@@ -155,10 +133,7 @@ def install(force):  # pragma: no cover
     "--port", type=int, default=8000, help="The port to use if streamable-http transport is enabled (Default: 8000)"
 )
 def mcp(http, host, port):
-    from scrapling.core.ai import ScraplingMCPServer
-
-    server = ScraplingMCPServer()
-    server.serve(http, host, port)
+    pass
 
 
 @command(help="Interactive scraping console")
@@ -181,10 +156,7 @@ def mcp(http, host, port):
     help="Log level (default: DEBUG)",
 )
 def shell(code, level):
-    from scrapling.core.shell import CustomShell
-
-    console = CustomShell(code=code, log_level=level)
-    console.start()
+    pass
 
 
 @group(
@@ -202,132 +174,17 @@ def extract():
 
 def _common_http_options(f):
     """Apply shared Click options for all HTTP extract commands (get/post/put/delete)."""
-    decorators = [
-        option(
-            "--ai-targeted",
-            is_flag=True,
-            default=False,
-            help="Extract only main content and sanitize hidden elements for AI consumption (default: False)",
-        ),
-        option(
-            "--stealthy-headers/--no-stealthy-headers",
-            default=True,
-            help="Use stealthy browser headers (default: True)",
-        ),
-        option(
-            "--impersonate",
-            help="Browser to impersonate. Can be a single browser (e.g., chrome) or comma-separated list for random selection (e.g., chrome,firefox,safari).",
-        ),
-        option(
-            "--verify/--no-verify",
-            default=True,
-            help="Whether to verify SSL certificates (default: True)",
-        ),
-        option(
-            "--follow-redirects/--no-follow-redirects",
-            default=True,
-            help="Whether to follow redirects (default: True)",
-        ),
-        option(
-            "--params",
-            "-p",
-            multiple=True,
-            help='Query parameters in format "key=value" (can be used multiple times)',
-        ),
-        option(
-            "--css-selector",
-            "-s",
-            help="CSS selector to extract specific content from the page. It returns all matches.",
-        ),
-        option("--proxy", help='Proxy URL in format "http://username:password@host:port"'),
-        option("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)"),
-        option("--cookies", help='Cookies string in format "name1=value1; name2=value2"'),
-        option(
-            "--headers",
-            "-H",
-            multiple=True,
-            help='HTTP headers in format "Key: Value" (can be used multiple times)',
-        ),
-    ]
-    for decorator in decorators:
-        f = decorator(f)
-    return f
+    pass
 
 
 def _common_browser_options(f):
     """Apply shared Click options for browser-based commands (fetch/stealthy_fetch)."""
-    decorators = [
-        option(
-            "--ai-targeted",
-            is_flag=True,
-            default=False,
-            help="Extract only main content and sanitize hidden elements for AI consumption (default: False)",
-        ),
-        option(
-            "--extra-headers",
-            "-H",
-            multiple=True,
-            help='Extra headers in format "Key: Value" (can be used multiple times)',
-        ),
-        option("--proxy", help='Proxy URL in format "http://username:password@host:port"'),
-        option(
-            "--real-chrome/--no-real-chrome",
-            default=False,
-            help="If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)",
-        ),
-        option("--locale", default=None, help="Specify user locale. Defaults to the system default locale."),
-        option("--wait-selector", help="CSS selector to wait for before proceeding"),
-        option(
-            "--css-selector",
-            "-s",
-            help="CSS selector to extract specific content from the page. It returns all matches.",
-        ),
-        option(
-            "--wait",
-            type=int,
-            default=0,
-            help="Additional wait time in milliseconds after page load (default: 0)",
-        ),
-        option(
-            "--timeout",
-            type=int,
-            default=30000,
-            help="Timeout in milliseconds (default: 30000)",
-        ),
-        option(
-            "--network-idle/--no-network-idle",
-            default=False,
-            help="Wait for network idle (default: False)",
-        ),
-        option(
-            "--disable-resources/--enable-resources",
-            default=False,
-            help="Drop unnecessary resources for speed boost (default: False)",
-        ),
-        option(
-            "--headless/--no-headless",
-            default=True,
-            help="Run browser in headless mode (default: True)",
-        ),
-    ]
-    for decorator in decorators:
-        f = decorator(f)
-    return f
+    pass
 
 
 def _data_options(f):
     """Apply data/json options for POST and PUT commands."""
-    decorators = [
-        option("--json", "-j", help="JSON data to include in the request body (as string)"),
-        option(
-            "--data",
-            "-d",
-            help='Form data to include in the request body (as string, ex: "param1=value1&param2=value2")',
-        ),
-    ]
-    for decorator in decorators:
-        f = decorator(f)
-    return f
+    pass
 
 
 def __http_command(
@@ -397,20 +254,7 @@ def post(
     ai_targeted,
 ):
     """Perform a POST request and save the content to a file."""
-    kwargs = __BuildRequest(
-        headers,
-        cookies,
-        params,
-        json,
-        timeout=timeout,
-        follow_redirects=follow_redirects,
-        verify=verify,
-        stealthy_headers=stealthy_headers,
-        impersonate=impersonate,
-        proxy=proxy,
-        data=data,
-    )
-    __http_command("post", url, output_file, css_selector, ai_targeted=ai_targeted, **kwargs)
+    pass
 
 
 @extract.command(help=f"Perform a PUT request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
@@ -436,20 +280,7 @@ def put(
     ai_targeted,
 ):
     """Perform a PUT request and save the content to a file."""
-    kwargs = __BuildRequest(
-        headers,
-        cookies,
-        params,
-        json,
-        timeout=timeout,
-        follow_redirects=follow_redirects,
-        verify=verify,
-        stealthy_headers=stealthy_headers,
-        impersonate=impersonate,
-        proxy=proxy,
-        data=data,
-    )
-    __http_command("put", url, output_file, css_selector, ai_targeted=ai_targeted, **kwargs)
+    pass
 
 
 @extract.command(help=f"Perform a DELETE request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
@@ -472,19 +303,7 @@ def delete(
     ai_targeted,
 ):
     """Perform a DELETE request and save the content to a file."""
-    kwargs = __BuildRequest(
-        headers,
-        cookies,
-        params,
-        None,
-        timeout=timeout,
-        follow_redirects=follow_redirects,
-        verify=verify,
-        stealthy_headers=stealthy_headers,
-        impersonate=impersonate,
-        proxy=proxy,
-    )
-    __http_command("delete", url, output_file, css_selector, ai_targeted=ai_targeted, **kwargs)
+    pass
 
 
 def __build_browser_kwargs(
@@ -500,23 +319,7 @@ def __build_browser_kwargs(
     parsed_headers,
 ) -> Dict[str, Any]:
     """Build shared kwargs dict for browser-based commands."""
-    kwargs: Dict[str, Any] = {
-        "headless": headless,
-        "disable_resources": disable_resources,
-        "network_idle": network_idle,
-        "timeout": timeout,
-        "locale": locale,
-        "real_chrome": real_chrome,
-    }
-    if wait > 0:
-        kwargs["wait"] = wait
-    if wait_selector:
-        kwargs["wait_selector"] = wait_selector
-    if proxy:
-        kwargs["proxy"] = proxy
-    if parsed_headers:
-        kwargs["extra_headers"] = parsed_headers
-    return kwargs
+    pass
 
 
 @extract.command(help=f"Use DynamicFetcher to fetch content with browser automation.\n\n{__OUTPUT_FILE_HELP__}")
@@ -540,22 +343,7 @@ def fetch(
     ai_targeted,
 ):
     """Opens up a browser and fetch content using DynamicFetcher."""
-    parsed_headers, _ = _ParseHeaders(extra_headers, False)
-    kwargs = __build_browser_kwargs(
-        headless,
-        disable_resources,
-        network_idle,
-        timeout,
-        wait,
-        wait_selector,
-        locale,
-        real_chrome,
-        proxy,
-        parsed_headers,
-    )
-    from scrapling.fetchers import DynamicFetcher
-
-    __Request_and_Save(DynamicFetcher.fetch, url, output_file, css_selector, ai_targeted=ai_targeted, **kwargs)
+    pass
 
 
 @extract.command(help=f"Use StealthyFetcher to fetch content with advanced stealth features.\n\n{__OUTPUT_FILE_HELP__}")
@@ -599,30 +387,7 @@ def stealthy_fetch(
     ai_targeted,
 ):
     """Opens up a browser with advanced stealth features and fetch content using StealthyFetcher."""
-    parsed_headers, _ = _ParseHeaders(extra_headers, False)
-    kwargs = __build_browser_kwargs(
-        headless,
-        disable_resources,
-        network_idle,
-        timeout,
-        wait,
-        wait_selector,
-        locale,
-        real_chrome,
-        proxy,
-        parsed_headers,
-    )
-    kwargs.update(
-        {
-            "block_webrtc": block_webrtc,
-            "solve_cloudflare": solve_cloudflare,
-            "allow_webgl": allow_webgl,
-            "hide_canvas": hide_canvas,
-        }
-    )
-    from scrapling.fetchers import StealthyFetcher
-
-    __Request_and_Save(StealthyFetcher.fetch, url, output_file, css_selector, ai_targeted=ai_targeted, **kwargs)
+    pass
 
 
 @group()

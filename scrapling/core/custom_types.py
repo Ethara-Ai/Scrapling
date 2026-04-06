@@ -42,55 +42,55 @@ class TextHandler(str):
         return TextHandler(super().strip(chars))
 
     def lstrip(self, chars: str | None = None) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().lstrip(chars))
+        pass
 
     def rstrip(self, chars: str | None = None) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().rstrip(chars))
+        pass
 
     def capitalize(self) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().capitalize())
+        pass
 
     def casefold(self) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().casefold())
+        pass
 
     def center(self, width: SupportsIndex, fillchar: str = " ") -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().center(width, fillchar))
+        pass
 
     def expandtabs(self, tabsize: SupportsIndex = 8) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().expandtabs(tabsize))
+        pass
 
     def format(self, *args: object, **kwargs: object) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().format(*args, **kwargs))
+        pass
 
     def format_map(self, mapping) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().format_map(mapping))
+        pass
 
     def join(self, iterable: Iterable[str]) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().join(iterable))
 
     def ljust(self, width: SupportsIndex, fillchar: str = " ") -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().ljust(width, fillchar))
+        pass
 
     def rjust(self, width: SupportsIndex, fillchar: str = " ") -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().rjust(width, fillchar))
+        pass
 
     def swapcase(self) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().swapcase())
+        pass
 
     def title(self) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().title())
+        pass
 
     def translate(self, table) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().translate(table))
+        pass
 
     def zfill(self, width: SupportsIndex) -> Union[str, "TextHandler"]:  # pragma: no cover
-        return TextHandler(super().zfill(width))
+        pass
 
     def replace(self, old: str, new: str, count: SupportsIndex = -1) -> Union[str, "TextHandler"]:
-        return TextHandler(super().replace(old, new, count))
+        pass
 
     def upper(self) -> Union[str, "TextHandler"]:
-        return TextHandler(super().upper())
+        pass
 
     def lower(self) -> Union[str, "TextHandler"]:
         return TextHandler(super().lower())
@@ -99,30 +99,25 @@ class TextHandler(str):
 
     def sort(self, reverse: bool = False) -> Union[str, "TextHandler"]:
         """Return a sorted version of the string"""
-        return self.__class__("".join(sorted(self, reverse=reverse)))
+        pass
 
     def clean(self, remove_entities=False) -> Union[str, "TextHandler"]:
         """Return a new version of the string after removing all white spaces and consecutive spaces"""
-        data = self.translate(__CLEANING_TABLE__)
-        if remove_entities:
-            data = _replace_entities(data)
-        return self.__class__(__CONSECUTIVE_SPACES_REGEX__.sub(" ", data).strip())
+        pass
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):  # pragma: no cover
         return self
 
     def getall(self):  # pragma: no cover
-        return self
+        pass
 
     extract = getall
     extract_first = get
 
     def json(self) -> Dict:
         """Return JSON response if the response is jsonable otherwise throw error"""
-        # Using str function as a workaround for orjson issue with subclasses of str.
-        # Check this out: https://github.com/ijl/orjson/issues/445
-        return loads(str(self))
+        pass
 
     @overload
     def re(
@@ -162,24 +157,7 @@ class TextHandler(str):
         :param check_match: Used to quickly check if this regex matches or not without any operations on the results
 
         """
-        if isinstance(regex, str):
-            if case_sensitive:
-                regex = re_compile(regex, UNICODE)
-            else:
-                regex = re_compile(regex, flags=UNICODE | IGNORECASE)
-
-        input_text = self.clean() if clean_match else self
-        results = regex.findall(input_text)
-        if check_match:
-            return bool(results)
-
-        if all(_is_iterable(res) for res in results):
-            results = flatten(results)
-
-        if not replace_entities:
-            return TextHandlers([TextHandler(string) for string in results])
-
-        return TextHandlers([TextHandler(_replace_entities(s)) for s in results])
+        pass
 
     def re_first(
         self,
@@ -198,13 +176,7 @@ class TextHandler(str):
         :param case_sensitive: If disabled, function will set the regex to ignore the letters-case while compiling it
 
         """
-        result = self.re(
-            regex,
-            replace_entities,
-            clean_match=clean_match,
-            case_sensitive=case_sensitive,
-        )
-        return result[0] if result else default
+        pass
 
 
 class TextHandlers(List[TextHandler]):
@@ -243,8 +215,7 @@ class TextHandlers(List[TextHandler]):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         :param case_sensitive: if disabled, the function will set the regex to ignore the letters-case while compiling it
         """
-        results = [n.re(regex, replace_entities, clean_match, case_sensitive) for n in self]
-        return TextHandlers(flatten(results))
+        pass
 
     def re_first(
         self,
@@ -263,10 +234,7 @@ class TextHandlers(List[TextHandler]):
         :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching
         :param case_sensitive: If disabled, function will set the regex to ignore the letters-case while compiling it
         """
-        for n in self:
-            for result in n.re(regex, replace_entities, clean_match, case_sensitive):
-                return result
-        return default
+        pass
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):
@@ -276,7 +244,7 @@ class TextHandlers(List[TextHandler]):
         return self[0] if len(self) > 0 else default
 
     def extract(self):
-        return self
+        pass
 
     extract_first = get
     getall = extract
@@ -313,18 +281,12 @@ class AttributesHandler(Mapping[str, _TextHandlerType]):
         :param keyword: The keyword to search for in the attribute values
         :param partial: If True, the function will search if keyword in each value instead of perfect match
         """
-        for key, value in self._data.items():
-            if partial:
-                if keyword in value:
-                    yield AttributesHandler({key: value})
-            else:
-                if keyword == value:
-                    yield AttributesHandler({key: value})
+        pass
 
     @property
     def json_string(self) -> bytes:
         """Convert current attributes to JSON bytes if the attributes are JSON serializable otherwise throws error"""
-        return dumps(dict(self._data))
+        pass
 
     def __getitem__(self, key: str) -> _TextHandlerType:
         return self._data[key]

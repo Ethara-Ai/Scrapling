@@ -83,7 +83,7 @@ class Response(Selector):
     @property
     def body(self) -> bytes:
         """Return the raw body of the response as bytes."""
-        return cast(bytes, cast(Sequence, self._raw_body))
+        pass
 
     def follow(
         self,
@@ -112,36 +112,7 @@ class Response(Selector):
         :param kwargs: Additional Request arguments
         :return: Request object ready to be yielded
         """
-        from scrapling.spiders import Request
-
-        if not self.request or not isinstance(self.request, Request):
-            raise TypeError("This response has no request set yet.")
-
-        # Merge original session kwargs with new kwargs (new takes precedence)
-        session_kwargs = {**self.request._session_kwargs, **kwargs}
-
-        if referer_flow:
-            # For requests
-            headers = session_kwargs.get("headers", {})
-            headers["referer"] = self.url
-            session_kwargs["headers"] = headers
-
-            # For browsers
-            extra_headers = session_kwargs.get("extra_headers", {})
-            extra_headers["referer"] = self.url
-            session_kwargs["extra_headers"] = extra_headers
-
-            session_kwargs["google_search"] = False
-
-        return Request(
-            url=self.urljoin(url),
-            sid=sid or self.request.sid,
-            callback=callback or self.request.callback,
-            priority=priority if priority is not None else self.request.priority,
-            dont_filter=dont_filter,
-            meta={**(self.meta or {}), **(meta or {})},
-            **session_kwargs,
-        )
+        pass
 
     def __str__(self) -> str:
         return f"<{self.status} {self.url}>"
@@ -180,15 +151,7 @@ class BaseFetcher:
 
     @classmethod
     def display_config(cls):
-        return dict(
-            huge_tree=cls.huge_tree,
-            keep_comments=cls.keep_comments,
-            keep_cdata=cls.keep_cdata,
-            adaptive=cls.adaptive,
-            storage=cls.storage,
-            storage_args=cls.storage_args,
-            adaptive_domain=cls.adaptive_domain,
-        )
+        pass
 
     @classmethod
     def configure(cls, **kwargs):
@@ -196,35 +159,13 @@ class BaseFetcher:
 
         :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, keep_cdata, adaptive, storage, storage_args, adaptive_domain
         """
-        for key, value in kwargs.items():
-            key = key.strip().lower()
-            if hasattr(cls, key):
-                if key in cls.parser_keywords:
-                    setattr(cls, key, value)
-                else:
-                    # Yup, no fun allowed LOL
-                    raise AttributeError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
-            else:
-                raise ValueError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
-
-        if not kwargs:
-            raise AttributeError(f"You must pass a keyword to configure, current keywords: {cls.parser_keywords}?")
+        pass
 
     @classmethod
     def _generate_parser_arguments(cls) -> Dict:
         # Selector class parameters
         # I won't validate Selector's class parameters here again, I will leave it to be validated later
-        parser_arguments = dict(
-            huge_tree=cls.huge_tree,
-            keep_comments=cls.keep_comments,
-            keep_cdata=cls.keep_cdata,
-            adaptive=cls.adaptive,
-            storage=cls.storage,
-            storage_args=cls.storage_args,
-            adaptive_domain=cls.adaptive_domain,
-        )
-
-        return parser_arguments
+        pass
 
 
 class StatusText:

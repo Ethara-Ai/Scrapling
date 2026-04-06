@@ -107,17 +107,7 @@ class ScraplingMCPServer:
 
     def _get_session(self, session_id: str, expected_type: SessionType) -> _SessionEntry:
         """Look up a session by ID and validate its type."""
-        entry = self._sessions.get(session_id)
-        if entry is None:
-            raise ValueError(f"Session '{session_id}' not found. Use list_sessions to see active sessions.")
-        if not entry.session._is_alive:
-            raise ValueError(f"Session '{session_id}' is no longer alive. Open a new session.")
-        if entry.session_type != expected_type:
-            raise ValueError(
-                f"Session '{session_id}' is a '{entry.session_type}' session, but this tool requires a "
-                f"'{expected_type}' session. Use the matching fetch tool for your session type."
-            )
-        return entry
+        pass
 
     async def open_session(
         self,
@@ -174,52 +164,7 @@ class ScraplingMCPServer:
         :param solve_cloudflare: (Stealthy only) Solves all types of the Cloudflare's Turnstile/Interstitial challenges.
         :param additional_args: (Stealthy only) Additional arguments to be passed to Playwright's context as additional settings.
         """
-        common_kwargs: Dict[str, Any] = dict(
-            wait=wait,
-            proxy=proxy,
-            locale=locale,
-            timeout=timeout,
-            cookies=cookies,
-            cdp_url=cdp_url,
-            headless=headless,
-            max_pages=max_pages,
-            useragent=useragent,
-            timezone_id=timezone_id,
-            real_chrome=real_chrome,
-            network_idle=network_idle,
-            wait_selector=wait_selector,
-            google_search=google_search,
-            extra_headers=extra_headers,
-            disable_resources=disable_resources,
-            wait_selector_state=wait_selector_state,
-        )
-
-        session: Union[AsyncDynamicSession, AsyncStealthySession]
-        if session_type == "stealthy":
-            session = AsyncStealthySession(
-                **common_kwargs,
-                hide_canvas=hide_canvas,
-                block_webrtc=block_webrtc,
-                allow_webgl=allow_webgl,
-                solve_cloudflare=solve_cloudflare,
-                additional_args=additional_args,
-            )
-        else:
-            session = AsyncDynamicSession(**common_kwargs)
-
-        await session.start()
-
-        session_id = uuid4().hex[:12]
-        entry = _SessionEntry(session=session, session_type=session_type)
-        self._sessions[session_id] = entry
-
-        return SessionCreatedModel(
-            session_id=session_id,
-            session_type=session_type,
-            created_at=entry.created_at,
-            is_alive=True,
-            message=f"Session '{session_id}' ({session_type}) created successfully.",
-        )
+        pass
 
     async def close_session(
         self,
@@ -229,27 +174,11 @@ class ScraplingMCPServer:
 
         :param session_id: The unique identifier of the session to close. Use list_sessions to see active sessions.
         """
-        entry = self._sessions.pop(session_id, None)
-        if entry is None:
-            raise ValueError(f"Session '{session_id}' not found. Use list_sessions to see active sessions.")
-
-        await entry.session.close()
-        return SessionClosedModel(
-            session_id=session_id,
-            message=f"Session '{session_id}' closed successfully.",
-        )
+        pass
 
     async def list_sessions(self) -> List[SessionInfo]:
         """List all active browser sessions with their details."""
-        return [
-            SessionInfo(
-                session_id=sid,
-                session_type=entry.session_type,
-                created_at=entry.created_at,
-                is_alive=entry.session._is_alive,
-            )
-            for sid, entry in self._sessions.items()
-        ]
+        pass
 
     @staticmethod
     async def get(
@@ -459,30 +388,7 @@ class ScraplingMCPServer:
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
-        results = await self.bulk_fetch(
-            urls=[url],
-            extraction_type=extraction_type,
-            css_selector=css_selector,
-            main_content_only=main_content_only,
-            headless=headless,
-            google_search=google_search,
-            real_chrome=real_chrome,
-            wait=wait,
-            proxy=proxy,
-            timezone_id=timezone_id,
-            locale=locale,
-            extra_headers=extra_headers,
-            useragent=useragent,
-            cdp_url=cdp_url,
-            timeout=timeout,
-            disable_resources=disable_resources,
-            wait_selector=wait_selector,
-            cookies=cookies,
-            network_idle=network_idle,
-            wait_selector_state=wait_selector_state,
-            session_id=session_id,
-        )
-        return results[0]
+        pass
 
     async def bulk_fetch(
         self,
@@ -541,48 +447,7 @@ class ScraplingMCPServer:
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
-        if session_id:
-            entry = self._get_session(session_id, "dynamic")
-            tasks = [
-                entry.session.fetch(
-                    url,
-                    wait=wait,
-                    timeout=timeout,
-                    google_search=google_search,
-                    extra_headers=extra_headers,
-                    disable_resources=disable_resources,
-                    wait_selector=wait_selector,
-                    wait_selector_state=wait_selector_state,
-                    network_idle=network_idle,
-                    proxy=proxy,
-                )
-                for url in urls
-            ]
-            responses = await gather(*tasks)
-        else:
-            async with AsyncDynamicSession(
-                wait=wait,
-                proxy=proxy,
-                locale=locale,
-                timeout=timeout,
-                cookies=cookies,
-                cdp_url=cdp_url,
-                headless=headless,
-                max_pages=len(urls),
-                useragent=useragent,
-                timezone_id=timezone_id,
-                real_chrome=real_chrome,
-                network_idle=network_idle,
-                wait_selector=wait_selector,
-                google_search=google_search,
-                extra_headers=extra_headers,
-                disable_resources=disable_resources,
-                wait_selector_state=wait_selector_state,
-            ) as session:
-                tasks = [session.fetch(url) for url in urls]
-                responses = await gather(*tasks)
-
-        return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
+        pass
 
     async def stealthy_fetch(
         self,
@@ -651,35 +516,7 @@ class ScraplingMCPServer:
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
-        results = await self.bulk_stealthy_fetch(
-            urls=[url],
-            extraction_type=extraction_type,
-            css_selector=css_selector,
-            main_content_only=main_content_only,
-            headless=headless,
-            google_search=google_search,
-            real_chrome=real_chrome,
-            wait=wait,
-            proxy=proxy,
-            timezone_id=timezone_id,
-            locale=locale,
-            extra_headers=extra_headers,
-            useragent=useragent,
-            hide_canvas=hide_canvas,
-            cdp_url=cdp_url,
-            timeout=timeout,
-            disable_resources=disable_resources,
-            wait_selector=wait_selector,
-            cookies=cookies,
-            network_idle=network_idle,
-            wait_selector_state=wait_selector_state,
-            block_webrtc=block_webrtc,
-            allow_webgl=allow_webgl,
-            solve_cloudflare=solve_cloudflare,
-            additional_args=additional_args,
-            session_id=session_id,
-        )
-        return results[0]
+        pass
 
     async def bulk_stealthy_fetch(
         self,
@@ -748,80 +585,8 @@ class ScraplingMCPServer:
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
-        if session_id:
-            entry = self._get_session(session_id, "stealthy")
-            tasks = [
-                entry.session.fetch(
-                    url,
-                    wait=wait,
-                    timeout=timeout,
-                    google_search=google_search,
-                    extra_headers=extra_headers,
-                    disable_resources=disable_resources,
-                    wait_selector=wait_selector,
-                    wait_selector_state=wait_selector_state,
-                    network_idle=network_idle,
-                    proxy=proxy,
-                    solve_cloudflare=solve_cloudflare,
-                )
-                for url in urls
-            ]
-            responses = await gather(*tasks)
-        else:
-            async with AsyncStealthySession(
-                wait=wait,
-                proxy=proxy,
-                locale=locale,
-                cdp_url=cdp_url,
-                timeout=timeout,
-                cookies=cookies,
-                headless=headless,
-                useragent=useragent,
-                timezone_id=timezone_id,
-                real_chrome=real_chrome,
-                hide_canvas=hide_canvas,
-                allow_webgl=allow_webgl,
-                network_idle=network_idle,
-                block_webrtc=block_webrtc,
-                wait_selector=wait_selector,
-                google_search=google_search,
-                extra_headers=extra_headers,
-                additional_args=additional_args,
-                solve_cloudflare=solve_cloudflare,
-                disable_resources=disable_resources,
-                wait_selector_state=wait_selector_state,
-            ) as session:
-                tasks = [session.fetch(url) for url in urls]
-                responses = await gather(*tasks)
-
-        return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
+        pass
 
     def serve(self, http: bool, host: str, port: int):
         """Serve the MCP server."""
-        server = FastMCP(name="Scrapling", host=host, port=port)
-        # Session management tools
-        server.add_tool(self.open_session, title="open_session", structured_output=True)
-        server.add_tool(self.close_session, title="close_session", structured_output=True)
-        server.add_tool(self.list_sessions, title="list_sessions", structured_output=True)
-        # HTTP tools
-        server.add_tool(self.get, title="get", description=self.get.__doc__, structured_output=True)
-        server.add_tool(self.bulk_get, title="bulk_get", description=self.bulk_get.__doc__, structured_output=True)
-        # Dynamic browser tools
-        server.add_tool(self.fetch, title="fetch", description=self.fetch.__doc__, structured_output=True)
-        server.add_tool(
-            self.bulk_fetch, title="bulk_fetch", description=self.bulk_fetch.__doc__, structured_output=True
-        )
-        # Stealthy browser tools
-        server.add_tool(
-            self.stealthy_fetch,
-            title="stealthy_fetch",
-            description=self.stealthy_fetch.__doc__,
-            structured_output=True,
-        )
-        server.add_tool(
-            self.bulk_stealthy_fetch,
-            title="bulk_stealthy_fetch",
-            description=self.bulk_stealthy_fetch.__doc__,
-            structured_output=True,
-        )
-        server.run(transport="stdio" if not http else "streamable-http")
+        pass

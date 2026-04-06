@@ -32,28 +32,11 @@ class LogCounterHandler(logging.Handler):
         }
 
     def emit(self, record: logging.LogRecord) -> None:
-        level = record.levelno
-        # Map to the closest standard level
-        if level >= logging.CRITICAL:
-            self.counts[logging.CRITICAL] += 1
-        elif level >= logging.ERROR:
-            self.counts[logging.ERROR] += 1
-        elif level >= logging.WARNING:
-            self.counts[logging.WARNING] += 1
-        elif level >= logging.INFO:
-            self.counts[logging.INFO] += 1
-        else:
-            self.counts[logging.DEBUG] += 1
+        pass
 
     def get_counts(self) -> Dict[str, int]:
         """Return counts as a dictionary with string keys."""
-        return {
-            "debug": self.counts[logging.DEBUG],
-            "info": self.counts[logging.INFO],
-            "warning": self.counts[logging.WARNING],
-            "error": self.counts[logging.ERROR],
-            "critical": self.counts[logging.CRITICAL],
-        }
+        pass
 
 
 class SessionConfigurationError(Exception):
@@ -147,13 +130,7 @@ class Spider(ABC):
         Override this method for more control over initial requests
         (e.g., to add custom headers, use different callbacks, etc.)
         """
-        if not self.start_urls:
-            raise RuntimeError(
-                "Spider has no starting point, either set `start_urls` or override `start_requests` function."
-            )
-
-        for url in self.start_urls:
-            yield Request(url, sid=self._session_manager.default_session_id)
+        pass
 
     @abstractmethod
     async def parse(self, response: "Response") -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
@@ -166,14 +143,11 @@ class Spider(ABC):
 
         :param resuming: It's enabled if the spider is resuming from a checkpoint, left for the user to use.
         """
-        if resuming:
-            self.logger.debug("Resuming spider from checkpoint")
-        else:
-            self.logger.debug("Starting spider")
+        pass
 
     async def on_close(self) -> None:
         """Called after crawling finishes. Override for cleanup logic."""
-        self.logger.debug("Spider closed")
+        pass
 
     async def on_error(self, request: Request, error: Exception) -> None:
         """
@@ -185,17 +159,15 @@ class Spider(ABC):
 
     async def on_scraped_item(self, item: Dict[str, Any]) -> Dict[str, Any] | None:
         """A hook to be overridden by users to do some processing on scraped items, return `None` to drop the item silently."""
-        return item
+        pass
 
     async def is_blocked(self, response: "Response") -> bool:
         """Check if the response is blocked. Users should override this for custom detection logic."""
-        if response.status in BLOCKED_CODES:
-            return True
-        return False
+        pass
 
     async def retry_blocked_request(self, request: Request, response: "Response") -> Request:
         """Users should override this to prepare the blocked request before retrying, if needed."""
-        return request
+        pass
 
     def __repr__(self) -> str:
         """String representation of the spider."""
@@ -211,55 +183,22 @@ class Spider(ABC):
 
         :param manager: SessionManager to configure
         """
-        from scrapling.fetchers import FetcherSession
-
-        manager.add("default", FetcherSession())
+        pass
 
     def pause(self):
         """Request graceful shutdown of the crawling process."""
-        if self._engine:
-            self._engine.request_pause()
-        else:
-            raise RuntimeError("No active crawl to stop")
+        pass
 
     def _setup_signal_handler(self) -> None:
         """Set up SIGINT handler for graceful pause."""
-
-        def handler(_signum: int, _frame: Any) -> None:
-            if self._engine:
-                self._engine.request_pause()
-            else:
-                # No engine yet, just raise KeyboardInterrupt
-                raise KeyboardInterrupt
-
-        try:
-            self._original_sigint_handler = signal.signal(signal.SIGINT, handler)
-        except ValueError:
-            self._original_sigint_handler = None
+        pass
 
     def _restore_signal_handler(self) -> None:
         """Restore original SIGINT handler."""
-        if self._original_sigint_handler is not None:
-            try:
-                signal.signal(signal.SIGINT, self._original_sigint_handler)
-            except ValueError:
-                pass
+        pass
 
     async def __run(self) -> CrawlResult:
-        token = set_logger(self.logger)
-        try:
-            self._engine = CrawlerEngine(self, self._session_manager, self.crawldir, self._interval)
-            stats = await self._engine.crawl()
-            paused = self._engine.paused
-            return CrawlResult(stats=stats, items=self._engine.items, paused=paused)
-        finally:
-            self._engine = None
-            reset_logger(token)
-            # Close any file handlers to release file resources.
-            if self.log_file:
-                for handler in self.logger.handlers:
-                    if isinstance(handler, logging.FileHandler):
-                        handler.close()
+        pass
 
     def start(self, use_uvloop: bool = False, **backend_options: Any) -> CrawlResult:
         """Run the spider and return results.
@@ -276,16 +215,7 @@ class Spider(ABC):
         :param use_uvloop: Whether to use the faster uvloop/winloop event loop implementation, if available.
         :param backend_options: Asyncio backend options to be used with `anyio.run`
         """
-        backend_options = backend_options or {}
-        if use_uvloop:
-            backend_options.update({"use_uvloop": True})
-
-        # Set up SIGINT handler for graceful shutdown
-        self._setup_signal_handler()
-        try:
-            return anyio.run(self.__run, backend="asyncio", backend_options=backend_options)
-        finally:
-            self._restore_signal_handler()
+        pass
 
     async def stream(self) -> AsyncGenerator[Dict[str, Any], None]:
         """Stream items as they're scraped. Ideal for long-running spiders or building applications on top of the spiders.
@@ -295,22 +225,9 @@ class Spider(ABC):
 
         Note: SIGINT handling for pause/resume is not available in stream mode.
         """
-        token = set_logger(self.logger)
-        try:
-            self._engine = CrawlerEngine(self, self._session_manager, self.crawldir, self._interval)
-            async for item in self._engine:
-                yield item
-        finally:
-            self._engine = None
-            reset_logger(token)
-            if self.log_file:
-                for handler in self.logger.handlers:
-                    if isinstance(handler, logging.FileHandler):
-                        handler.close()
+        pass
 
     @property
     def stats(self) -> CrawlStats:
         """Access current crawl stats (works during streaming)."""
-        if self._engine:
-            return self._engine.stats
-        raise RuntimeError("No active crawl. Use this property inside `async for item in spider.stream():`")
+        pass

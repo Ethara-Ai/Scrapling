@@ -36,16 +36,7 @@ class DynamicFetcher(BaseFetcher):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings.
         :return: A `Response` object.
         """
-        selector_config = kwargs.get("selector_config", {}) or kwargs.get(
-            "custom_config", {}
-        )  # Checking `custom_config` for backward compatibility
-        if not isinstance(selector_config, dict):
-            raise TypeError("Argument `selector_config` must be a dictionary.")
-
-        kwargs["selector_config"] = {**cls._generate_parser_arguments(), **selector_config}
-
-        with DynamicSession(**kwargs) as session:
-            return session.fetch(url)
+        pass
 
     @classmethod
     async def async_fetch(cls, url: str, **kwargs: Unpack[PlaywrightSession]) -> Response:
@@ -76,16 +67,7 @@ class DynamicFetcher(BaseFetcher):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings.
         :return: A `Response` object.
         """
-        selector_config = kwargs.get("selector_config", {}) or kwargs.get(
-            "custom_config", {}
-        )  # Checking `custom_config` for backward compatibility
-        if not isinstance(selector_config, dict):
-            raise TypeError("Argument `selector_config` must be a dictionary.")
-
-        kwargs["selector_config"] = {**cls._generate_parser_arguments(), **selector_config}
-
-        async with AsyncDynamicSession(**kwargs) as session:
-            return await session.fetch(url)
+        pass
 
 
 PlayWrightFetcher = DynamicFetcher  # For backward-compatibility

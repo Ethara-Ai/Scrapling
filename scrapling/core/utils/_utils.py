@@ -50,12 +50,12 @@ log = LoggerProxy()
 
 def set_logger(logger: logging.Logger) -> Token:
     """Set the current context logger. Returns token for reset."""
-    return _current_logger.set(logger)
+    pass
 
 
 def reset_logger(token: Token) -> None:
     """Reset logger to previous state using token."""
-    _current_logger.reset(token)
+    pass
 
 
 def flatten(lst: Iterable[Any]) -> List[Any]:
@@ -64,13 +64,7 @@ def flatten(lst: Iterable[Any]) -> List[Any]:
 
 def _is_iterable(obj: Any) -> bool:
     # This will be used only in regex functions to make sure it's iterable but not string/bytes
-    return isinstance(
-        obj,
-        (
-            list,
-            tuple,
-        ),
-    )
+    pass
 
 
 class _StorageTools:
@@ -116,5 +110,4 @@ class _StorageTools:
 
 @lru_cache(128, typed=True)
 def clean_spaces(string):
-    string = string.translate(__CLEANING_TABLE__)
-    return __CONSECUTIVE_SPACES_REGEX__.sub(" ", string)
+    pass

@@ -17,11 +17,7 @@ _PROXY_ERROR_INDICATORS = {
 
 def _get_proxy_key(proxy: ProxyType) -> str:
     """Generate a unique key for a proxy (for dicts it's server plus username)."""
-    if isinstance(proxy, str):
-        return proxy
-    server = proxy.get("server", "")
-    username = proxy.get("username", "")
-    return f"{server}|{username}"
+    pass
 
 
 def is_proxy_error(error: Exception) -> bool:
@@ -32,8 +28,7 @@ def is_proxy_error(error: Exception) -> bool:
 
 def cyclic_rotation(proxies: List[ProxyType], current_index: int) -> Tuple[ProxyType, int]:
     """Default cyclic rotation strategy - iterates through proxies sequentially, wrapping around at the end."""
-    idx = current_index % len(proxies)
-    return proxies[idx], (idx + 1) % len(proxies)
+    pass
 
 
 class ProxyRotator:
@@ -94,7 +89,7 @@ class ProxyRotator:
     @property
     def proxies(self) -> List[ProxyType]:
         """Get a copy of all configured proxies."""
-        return list(self._proxies)
+        pass
 
     def __len__(self) -> int:
         """Return the total number of configured proxies."""

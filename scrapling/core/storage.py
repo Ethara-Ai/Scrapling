@@ -62,12 +62,7 @@ class StorageSystemMixin(ABC):  # pragma: no cover
     @lru_cache(128, typed=True)
     def _get_hash(identifier: str) -> str:
         """If you want to hash identifier in your storage system, use this safer"""
-        _identifier = identifier.lower().strip()
-        # Hash functions have to take bytes
-        _identifier_bytes = _identifier.encode("utf-8")
-
-        hash_value = sha256(_identifier_bytes).hexdigest()
-        return f"{hash_value}_{len(_identifier_bytes)}"  # Length to reduce collision chance
+        pass
 
 
 @lru_cache(1, typed=True)
@@ -95,16 +90,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         log.debug(f'Storage system loaded with arguments (storage_file="{storage_file}", url="{url}")')
 
     def _setup_database(self) -> None:
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS storage (
-                id INTEGER PRIMARY KEY,
-                url TEXT,
-                identifier TEXT,
-                element_data TEXT,
-                UNIQUE (url, identifier)
-            )
-        """)
-        self.connection.commit()
+        pass
 
     def save(self, element: HtmlElement, identifier: str) -> None:
         """Saves the elements unique properties to the storage for retrieval and relocation later

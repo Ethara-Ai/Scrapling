@@ -29,52 +29,26 @@ class Scheduler:
 
     async def enqueue(self, request: Request) -> bool:
         """Add a request to the queue."""
-        fingerprint = request.update_fingerprint(self._include_kwargs, self._include_headers, self._keep_fragments)
-
-        if not request.dont_filter and fingerprint in self._seen:
-            log.debug("Dropped duplicate request: %s", request)
-            return False
-
-        self._seen.add(fingerprint)
-
-        # Negative priority so higher priority = dequeued first
-        counter = next(self._counter)
-        item = (-request.priority, counter, request)
-        self._pending[counter] = item
-        await self._queue.put(item)
-        return True
+        pass
 
     async def dequeue(self) -> Request:
         """Get the next request to process."""
-        _, counter, request = await self._queue.get()
-        self._pending.pop(counter, None)
-        return request
+        pass
 
     def __len__(self) -> int:
         return self._queue.qsize()
 
     @property
     def is_empty(self) -> bool:
-        return self._queue.empty()
+        pass
 
     def snapshot(self) -> Tuple[List[Request], Set[bytes]]:
         """Create a snapshot of the current state for checkpoints."""
-        sorted_items = sorted(self._pending.values(), key=lambda x: (x[0], x[1]))  # Maintain queue order
-        requests = [item[2] for item in sorted_items]
-        return requests, self._seen.copy()
+        pass
 
     def restore(self, data: "CheckpointData") -> None:
         """Restore scheduler state from checkpoint data.
 
         :param data: CheckpointData containing requests and seen set
         """
-        self._seen = data.seen.copy()
-
-        # Restore pending requests in order (they're already sorted by priority)
-        for request in data.requests:
-            counter = next(self._counter)
-            item = (-request.priority, counter, request)
-            self._pending[counter] = item
-            self._queue.put_nowait(item)
-
-        log.info(f"Scheduler restored: {len(data.requests)} requests, {len(data.seen)} seen")
+        pass
